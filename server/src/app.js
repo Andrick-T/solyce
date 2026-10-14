@@ -11,6 +11,9 @@ import adminAuthRoutes from "./routes/admin-auth.routes.js";
 import adminCoursesRoutes from "./routes/admin-courses.routes.js";
 import adminCohortsRoutes from "./routes/admin-cohorts.routes.js";
 import adminInstructorsRoutes from "./routes/admin-instructor.routes.js";
+import publicBookingsRoutes from "./routes/public-bookings.routes.js";
+import adminEnrollmentsRoutes from "./routes/admin-enrollments.routes.js";
+import adminPaymentsRoutes from "./routes/admin-payments.routes.js";
 
 const app = express();
 const port = Number(process.env.PORT ?? 5000);
@@ -61,11 +64,15 @@ app.use(
 
 // Existing public API â€” preserved.
 app.use("/api", publicRoutes);
+app.use("/api/bookings", publicBookingsRoutes);
 
 app.use("/api/admin/auth", adminAuthRoutes);
 app.use("/api/admin/courses", adminCoursesRoutes);
 app.use("/api/admin/cohorts", adminCohortsRoutes);
 app.use("/api/admin/instructors", adminInstructorsRoutes);
+app.use("/api/admin/enrollments", adminEnrollmentsRoutes);
+app.use("/api/admin/payments", adminPaymentsRoutes);
+
 app.get("/api/health", async (_req, res) => {
   try {
     await prisma.$queryRaw`SELECT 1`;

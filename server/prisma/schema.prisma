@@ -74,27 +74,33 @@ model Cohort {
   @@map("cohorts")
 }
 
-model Enrollment {
-  id              Int              @id @default(autoincrement())
-  userId          Int
-  cohortId        Int
-  status          EnrollmentStatus @default(PENDING)
-  agreedPriceXaf  Int
-  enrolledAt      DateTime         @default(now())
-  confirmedAt     DateTime?
-  cancelledAt     DateTime?
-  createdAt       DateTime         @default(now())
-  updatedAt       DateTime         @updatedAt
 
-  user     User      @relation(fields: [userId], references: [id], onDelete: Restrict)
+model Enrollment {
+  id             Int              @id @default(autoincrement())
+  userId         Int?
+  guestFullName  String?          @db.VarChar(150)
+  guestEmail     String?          @db.VarChar(191)
+  guestPhone     String?          @db.VarChar(40)
+  cohortId       Int
+  status         EnrollmentStatus @default(PENDING)
+  agreedPriceXaf Int
+  enrolledAt     DateTime         @default(now())
+  confirmedAt    DateTime?
+  cancelledAt    DateTime?
+  createdAt      DateTime         @default(now())
+  updatedAt      DateTime         @updatedAt
+
+  user     User?     @relation(fields: [userId], references: [id], onDelete: Restrict)
   cohort   Cohort    @relation(fields: [cohortId], references: [id], onDelete: Restrict)
   payments Payment[]
 
   @@unique([userId, cohortId])
   @@index([cohortId, status])
   @@index([userId, status])
+  @@index([guestEmail, cohortId])
   @@map("enrollments")
 }
+
 
 model Payment {
   id                    Int           @id @default(autoincrement())

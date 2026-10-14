@@ -100,3 +100,145 @@ svg {
     transition-duration: 0.01ms !important;
   }
 }
+
+/* Student booking */
+
+.cohort-book-button {
+  margin-top: 16px;
+  width: 100%;
+}
+
+.booking-section {
+  max-width: 650px;
+  margin: 42px auto 80px;
+  scroll-margin-top: 30px;
+}
+
+.booking-panel {
+  display: grid;
+  gap: 17px;
+  padding: clamp(22px, 5vw, 38px);
+  border: 1px solid #e5e5dc;
+  background: #fff;
+}
+
+.booking-eyebrow {
+  margin: 0;
+  color: #7c856e;
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 0.15em;
+}
+
+.booking-panel h3 {
+  margin: -7px 0 0;
+  color: var(--ink);
+  font-family: var(--heading);
+  font-size: clamp(23px, 4vw, 32px);
+  letter-spacing: -0.05em;
+}
+
+.booking-panel > p:not(.booking-eyebrow) {
+  margin: 0;
+  color: #70766d;
+  font-size: 12px;
+  line-height: 1.8;
+}
+
+.booking-summary {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 15px;
+  padding: 16px;
+  background: #f3f2eb;
+  color: var(--ink);
+  font-size: 11px;
+}
+
+.booking-summary strong {
+  text-align: right;
+}
+
+.booking-field {
+  display: grid;
+  gap: 8px;
+  color: #424d42;
+  font-size: 11px;
+  font-weight: 600;
+}
+
+.booking-field input {
+  width: 100%;
+  min-width: 0;
+  min-height: 44px;
+  padding: 12px;
+  border: 1px solid #dedfd5;
+  border-radius: 2px;
+  background: #fff;
+  color: var(--ink);
+  font: inherit;
+  font-weight: 400;
+}
+
+.booking-field input:focus {
+  outline: 2px solid #a3b96c;
+  outline-offset: 1px;
+}
+
+.booking-submit {
+  width: 100%;
+}
+
+.booking-submit:disabled {
+  opacity: 0.65;
+  cursor: wait;
+}
+
+.booking-disclaimer {
+  font-size: 10px !important;
+}
+
+.booking-error {
+  margin: 0;
+  padding: 12px;
+  border: 1px solid #f1d1ca;
+  background: #fff0ed;
+  color: #8b493d !important;
+  font-size: 11px;
+  line-height: 1.6;
+}
+
+.booking-reference {
+  display: grid;
+  gap: 7px;
+  padding: 17px;
+  border: 1px solid #dce4ce;
+  background: #f4f6ee;
+}
+
+.booking-reference span {
+  color: #68735e;
+  font-size: 10px;
+}
+
+.booking-reference strong {
+  color: var(--ink);
+  font-size: 21px;
+  letter-spacing: 0.04em;
+}
+
+@media (max-width: 600px) {
+  .booking-section {
+    margin: 28px auto 55px;
+  }
+
+  .booking-summary {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .booking-summary strong {
+    text-align: left;
+  }
+}

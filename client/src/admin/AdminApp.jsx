@@ -245,6 +245,15 @@ export default function AdminApp() {
   const [courses, setCourses] = useState([]);
   const [cohorts, setCohorts] = useState([]);
   const [instructors, setInstructors] = useState([]);
+
+  const [instructorForm, setInstructorForm] = useState({
+    fullName: "",
+    email: "",
+    password: "",
+  });
+  const [instructorSaving, setInstructorSaving] = useState(false);
+  const [instructorError, setInstructorError] = useState("");
+
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [notice, setNotice] = useState("");
@@ -383,6 +392,37 @@ export default function AdminApp() {
       setSaving(false);
     }
   }
+  async function saveInstructor(event) {
+    event.preventDefault();
+    setInstructorSaving(true);
+    setInstructorError("");
+    setError("");
+
+    try {
+      await request("/admin/instructors", {
+        method: "POST",
+        headers: { Origin: window.location.origin },
+        body: JSON.stringify({
+          fullName: instructorForm.fullName.trim(),
+          email: instructorForm.email.trim().toLowerCase(),
+          password: instructorForm.password,
+        }),
+      });
+
+      setInstructorForm({
+        fullName: "",
+        email: "",
+        password: "",
+      });
+
+      await loadData();
+      flash("Instructor account created and activated.");
+    } catch (err) {
+      setInstructorError(err.message);
+    } finally {
+      setInstructorSaving(false);
+    }
+  }
   function openCourse(course) {
     setError("");
     setCourseModal({
@@ -461,6 +501,7 @@ export default function AdminApp() {
     { id: "overview", label: "Overview", icon: "overview" },
     { id: "courses", label: "Programs", icon: "courses" },
     { id: "cohorts", label: "Cohorts", icon: "cohorts" },
+    { id: "instructors", label: "Instructors", icon: "students" },
     { id: "students", label: "Students", icon: "students" },
     { id: "payments", label: "Payments", icon: "payments" },
   ];
@@ -537,9 +578,11 @@ export default function AdminApp() {
                     ? "Programs"
                     : page === "cohorts"
                       ? "Cohorts"
-                      : page === "students"
-                        ? "Student management"
-                        : "Payments"}
+                      : page === "instructors"
+                        ? "Instructor management"
+                        : page === "students"
+                          ? "Student management"
+                          : "Payments"}
               </h1>
               <p>
                 {page === "overview"
@@ -548,9 +591,11 @@ export default function AdminApp() {
                     ? "Create, refine and publish the programs learners can discover."
                     : page === "cohorts"
                       ? "Plan live learning groups, assign instructors and manage enrolment windows."
-                      : page === "students"
-                        ? "Student enrolment workflows are the next implementation milestone."
-                        : "Payment review and verification are the next implementation milestone."}
+                      : page === "instructors"
+                        ? "Create active instructor accounts and review who is available for cohort assignment."
+                        : page === "students"
+                          ? "Student enrolment workflows are the next implementation milestone."
+                          : "Payment review and verification are the next implementation milestone."}
               </p>
             </div>
             <div className="admin-heading-actions">
@@ -928,6 +973,174 @@ export default function AdminApp() {
                 )}
               </div>
             </section>
+          )}
+          {page === "instructors" && (
+            <div className="admin-overview-grid">
+              <section className="admin-panel">
+                <div className="admin-panel-heading">
+                  <div>
+                    <p className="admin-eyebrow">TEAM ACCESS</p>
+                    <h2>Create an instructor account</h2>
+                  </div>
+                </div>
+
+                <p className="admin-panel-description">
+                  Instructor accounts are activated immediately and can be
+                  assigned to cohorts. Share the initial password securely with
+                  the instructor.
+                </p>
+
+                <form className="admin-form-grid" onSubmit={saveInstructor}>
+                  <Field label="Full name" wide>
+                    <input
+                      autoComplete="name"
+                      required
+                      minLength={2}
+                      maxLength={120}
+                      value={instructorForm.fullName}
+                      onChange={(e) =>
+                        setInstructorForm((f) => ({
+                          ...f,
+                          fullName: e.target.value,
+                        }))
+                      }
+                      placeholder="Instructor full name"
+                    />
+                  </Field>
+
+                  <Field label="Email address" wide>
+                    <input
+                      autoComplete="email"
+                      type="email"
+                      required
+                      maxLength={254}
+                      value={instructorForm.email}
+                      onChange={(e) =>
+                        setInstructorForm((f) => ({
+                          ...f,
+                          email: e.target.value,
+                        }))
+                      }
+                      placeholder="instructor@example.com"
+                    />
+                  </Field>
+
+                  <Field label="Temporary password" wide>
+                    <input
+                      autoComplete="new-password"
+                      type="password"
+                      required
+                      minLength={12}
+                      maxLength={128}
+                      value={instructorForm.password}
+                      onChange={(e) =>
+                        setInstructorForm((f) => ({
+                          ...f,
+                          password: e.target.value,
+                        }))
+                      }
+                      placeholder="At least 12 characters"
+                    />
+                  </Field>
+
+                  <p className="admin-form-note">
+                    Use a unique password of at least 12 characters. The
+                    password is sent to the server for hashing and is not
+                    displayed again after the account is created.
+                  </p>
+
+                  {instructorError && (
+                    <div className="admin-alert wide" role="alert">
+                      {instructorError}
+                    </div>
+                  )}
+
+                  <div className="admin-modal-actions">
+                    <button
+                      type="button"
+                      className="admin-button subtle"
+                      disabled={instructorSaving}
+                      onClick={() => {
+                        setInstructorForm({
+                          fullName: "",
+                          email: "",
+                          password: "",
+                        });
+                        setInstructorError("");
+                      }}
+                    >
+                      Clear
+                    </button>
+
+                    <button
+                      className="admin-button primary"
+                      disabled={instructorSaving}
+                    >
+                      {instructorSaving
+                        ? "Creating account…"
+                        : "Create instructor"}
+                    </button>
+                  </div>
+                </form>
+              </section>
+
+              <section className="admin-panel admin-table-panel">
+                <div className="admin-panel-heading">
+                  <div>
+                    <p className="admin-eyebrow">AVAILABLE FOR ASSIGNMENT</p>
+                    <h2>
+                      Active instructors{" "}
+                      <span className="count-pill">{instructors.length}</span>
+                    </h2>
+                  </div>
+                </div>
+
+                <div className="admin-table-wrap">
+                  <table className="admin-table">
+                    <thead>
+                      <tr>
+                        <th>Instructor</th>
+                        <th>Assigned cohorts</th>
+                      </tr>
+                    </thead>
+
+                    <tbody>
+                      {instructors.map((instructor) => {
+                        const assignedCount = cohorts.filter(
+                          (cohort) =>
+                            String(
+                              cohort.instructorId ??
+                                cohort.instructor?.id ??
+                                "",
+                            ) === String(instructor.id),
+                        ).length;
+
+                        return (
+                          <tr key={instructor.id}>
+                            <td>
+                              <div className="table-primary">
+                                {instructor.fullName}
+                              </div>
+                              <div className="table-secondary">
+                                {instructor.email}
+                              </div>
+                            </td>
+                            <td>{assignedCount}</td>
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                  </table>
+
+                  {!instructors.length && (
+                    <div className="admin-empty">
+                      No active instructors yet. Create the first account using
+                      the form.
+                    </div>
+                  )}
+                </div>
+              </section>
+            </div>
           )}
           {page === "students" && (
             <section className="admin-panel admin-coming-panel">

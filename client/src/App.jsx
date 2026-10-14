@@ -109,11 +109,178 @@ function CourseCard({ course, onSelect }) {
   );
 }
 
+function BookingForm({ course, cohort, onClose }) {
+  const [form, setForm] = useState({
+    fullName: "",
+    email: "",
+    phone: "",
+  });
+  const [submitting, setSubmitting] = useState(false);
+  const [error, setError] = useState("");
+  const [booking, setBooking] = useState(null);
+
+  const price = cohort.priceXaf ?? course.priceXaf;
+
+  async function handleSubmit(event) {
+    event.preventDefault();
+    setSubmitting(true);
+    setError("");
+
+    try {
+      const response = await fetch(`${API_BASE_URL}/bookings`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          cohortId: cohort.id,
+          fullName: form.fullName.trim(),
+          email: form.email.trim(),
+          phone: form.phone.trim(),
+        }),
+      });
+
+      const result = await response.json().catch(() => ({}));
+
+      if (!response.ok) {
+        throw new Error(
+          result?.error?.message ||
+            result?.message ||
+            "We could not complete your booking. Please try again.",
+        );
+      }
+
+      setBooking(result.data || result);
+    } catch (err) {
+      setError(
+        err instanceof TypeError
+          ? "Unable to reach Solyce. Please check your connection."
+          : err.message,
+      );
+    } finally {
+      setSubmitting(false);
+    }
+  }
+
+  if (booking) {
+    const reference =
+      booking.reference || booking.bookingReference || booking.enrollment?.id;
+
+    return (
+      <div className="booking-panel" role="status">
+        <p className="booking-eyebrow">BOOKING RECEIVED</p>
+        <h3>Your next chapter starts here.</h3>
+        <p>
+          Your booking request has been recorded. It is not yet a confirmed
+          enrolment. Confirmation follows verification of your full payment by
+          the Solyce team.
+        </p>
+
+        {reference != null && (
+          <div className="booking-reference">
+            <span>Booking reference</span>
+            <strong>
+              {String(reference).startsWith("SOL-")
+                ? reference
+                : `SOL-${String(reference).padStart(6, "0")}`}
+            </strong>
+          </div>
+        )}
+
+        <p>
+          Please keep your reference and contact the Solyce team for
+          instructions on paying by MTN Mobile Money, Orange Money, bank
+          transfer or another accepted offline method.
+        </p>
+
+        <button className="button button-primary" onClick={onClose}>
+          Done
+        </button>
+      </div>
+    );
+  }
+
+  return (
+    <form className="booking-panel" onSubmit={handleSubmit}>
+      <p className="booking-eyebrow">RESERVE YOUR PLACE</p>
+      <h3>Book your place in {cohort.name}</h3>
+      <p>
+        Enter your contact details to reserve a place. No student account is
+        required.
+      </p>
+
+      <div className="booking-summary">
+        <span>{course.title}</span>
+        <strong>{formatPrice(price)}</strong>
+      </div>
+
+      <label className="booking-field">
+        <span>Full name</span>
+        <input
+          autoComplete="name"
+          required
+          maxLength={150}
+          value={form.fullName}
+          onChange={(event) =>
+            setForm({ ...form, fullName: event.target.value })
+          }
+          placeholder="Your full name"
+        />
+      </label>
+
+      <label className="booking-field">
+        <span>Email address</span>
+        <input
+          type="email"
+          autoComplete="email"
+          required
+          maxLength={191}
+          value={form.email}
+          onChange={(event) => setForm({ ...form, email: event.target.value })}
+          placeholder="you@example.com"
+        />
+      </label>
+
+      <label className="booking-field">
+        <span>Phone number</span>
+        <input
+          type="tel"
+          autoComplete="tel"
+          required
+          maxLength={40}
+          value={form.phone}
+          onChange={(event) => setForm({ ...form, phone: event.target.value })}
+          placeholder="+237 ..."
+        />
+      </label>
+
+      {error && (
+        <p className="booking-error" role="alert">
+          {error}
+        </p>
+      )}
+
+      <button
+        className="button button-primary booking-submit"
+        type="submit"
+        disabled={submitting}
+      >
+        {submitting ? "Submitting…" : "Submit booking"}
+        {!submitting && <ArrowIcon />}
+      </button>
+
+      <p className="booking-disclaimer">
+        Your place is not confirmed until the required payment has been verified
+        by Solyce.
+      </p>
+    </form>
+  );
+}
+
 function CourseDetail({ course, onBack }) {
   const curriculum = (course.curriculum || "")
     .split("\n")
     .map((item) => item.trim())
     .filter(Boolean);
+  const [bookingCohort, setBookingCohort] = useState(null);
 
   return (
     <main className="detail-page">
@@ -225,6 +392,13 @@ function CourseDetail({ course, onBack }) {
                       {formatPrice(cohort.priceXaf ?? course.priceXaf)}
                     </strong>
                     <span>{cohort.seatsRemaining} places remaining</span>
+                    <button
+                      className="button button-primary cohort-book-button"
+                      type="button"
+                      onClick={() => setBookingCohort(cohort)}
+                    >
+                      Reserve your place <ArrowIcon />
+                    </button>
                   </div>
                 </article>
               ))}
@@ -250,6 +424,19 @@ function CourseDetail({ course, onBack }) {
             </div>
           )}
         </section>
+        {bookingCohort && (
+          <section
+            className="booking-section"
+            id="course-booking"
+            aria-label="Course booking"
+          >
+            <BookingForm
+              course={course}
+              cohort={bookingCohort}
+              onClose={() => setBookingCohort(null)}
+            />
+          </section>
+        )}
       </div>
     </main>
   );

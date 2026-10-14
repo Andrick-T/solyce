@@ -1070,3 +1070,10 @@
     padding: 12px;
   }
 }
+.admin-form-note {
+  grid-column: 1 / -1;
+  margin: -4px 0 0;
+  color: var(--admin-muted, #74796f);
+  font-size: 12px;
+  line-height: 1.6;
+}

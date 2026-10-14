@@ -18,6 +18,14 @@ const cohortStatuses = [
   "CANCELLED",
 ];
 
+const allowedTransitions = {
+  DRAFT: ["DRAFT", "OPEN", "CANCELLED"],
+  OPEN: ["OPEN", "IN_PROGRESS", "CANCELLED"],
+  IN_PROGRESS: ["IN_PROGRESS", "COMPLETED", "CANCELLED"],
+  COMPLETED: ["COMPLETED"],
+  CANCELLED: ["CANCELLED"],
+};
+
 const dateOnlySchema = z
   .string()
   .regex(/^\d{4}-\d{2}-\d{2}$/, "Use YYYY-MM-DD.")
@@ -103,6 +111,31 @@ function todayLocal() {
   const today = new Date();
   today.setHours(0, 0, 0, 0);
   return today;
+}
+
+function todayDateOnly() {
+  const now = new Date();
+
+  return [
+    now.getFullYear(),
+    String(now.getMonth() + 1).padStart(2, "0"),
+    String(now.getDate()).padStart(2, "0"),
+  ].join("-");
+}
+
+function isDateOnOrBeforeToday(value) {
+  return value <= todayDateOnly();
+}
+
+function getTransitionError(currentStatus, nextStatus) {
+  if (!allowedTransitions[currentStatus]?.includes(nextStatus)) {
+    return {
+      code: "INVALID_COHORT_TRANSITION",
+      message: `A cohort cannot transition from ${currentStatus} to ${nextStatus}.`,
+    };
+  }
+
+  return null;
 }
 
 function serializeCohort(cohort) {
@@ -201,6 +234,12 @@ function isDeadlineOpen(enrollmentDeadline) {
   );
 }
 
+function sendError(res, status, code, message) {
+  return res.status(status).json({
+    error: { code, message },
+  });
+}
+
 // GET /api/admin/cohorts
 // Supports optional ?status=OPEN and ?courseId=123 filters.
 router.get("/", requireAdmin, async (req, res) => {
@@ -232,6 +271,7 @@ router.get("/", requireAdmin, async (req, res) => {
 
     const data = cohorts.map((cohort) => {
       const { _count, ...rest } = cohort;
+
       return {
         ...serializeCohort(rest),
         totalEnrollmentRecords: _count.enrollments,
@@ -249,12 +289,12 @@ router.get("/:id", requireAdmin, async (req, res) => {
   const id = parseId(req.params.id);
 
   if (!id) {
-    return res.status(400).json({
-      error: {
-        code: "INVALID_COHORT_ID",
-        message: "Please provide a valid cohort ID.",
-      },
-    });
+    return sendError(
+      res,
+      400,
+      "INVALID_COHORT_ID",
+      "Please provide a valid cohort ID.",
+    );
   }
 
   try {
@@ -269,12 +309,12 @@ router.get("/:id", requireAdmin, async (req, res) => {
     });
 
     if (!cohort) {
-      return res.status(404).json({
-        error: {
-          code: "COHORT_NOT_FOUND",
-          message: "The requested cohort was not found.",
-        },
-      });
+      return sendError(
+        res,
+        404,
+        "COHORT_NOT_FOUND",
+        "The requested cohort was not found.",
+      );
     }
 
     const { _count, ...rest } = cohort;
@@ -300,15 +340,6 @@ router.post("/", requireSameOrigin, requireAdmin, async (req, res) => {
 
   const input = parsed.data;
 
-  if (input.status === "OPEN" && input.instructorId == null) {
-    return res.status(400).json({
-      error: {
-        code: "INSTRUCTOR_REQUIRED",
-        message: "Assign an active instructor before opening cohort enrolment.",
-      },
-    });
-  }
-
   const dateError = validateDates(
     input.startDate,
     input.endDate,
@@ -316,18 +347,34 @@ router.post("/", requireSameOrigin, requireAdmin, async (req, res) => {
   );
 
   if (dateError) {
-    return res.status(400).json({
-      error: { code: "INVALID_COHORT_DATES", message: dateError },
-    });
+    return sendError(res, 400, "INVALID_COHORT_DATES", dateError);
   }
 
   if (input.minimumStudents > input.capacity) {
-    return res.status(400).json({
-      error: {
-        code: "INVALID_COHORT_CAPACITY",
-        message: "Minimum students cannot exceed cohort capacity.",
-      },
-    });
+    return sendError(
+      res,
+      400,
+      "INVALID_COHORT_CAPACITY",
+      "Minimum students cannot exceed cohort capacity.",
+    );
+  }
+
+  if (input.status === "OPEN" && input.instructorId == null) {
+    return sendError(
+      res,
+      400,
+      "INSTRUCTOR_REQUIRED",
+      "Assign an active instructor before opening cohort enrolment.",
+    );
+  }
+
+  if (input.status === "IN_PROGRESS" || input.status === "COMPLETED") {
+    return sendError(
+      res,
+      400,
+      "INVALID_INITIAL_COHORT_STATUS",
+      "Create a cohort as DRAFT or OPEN, then progress it through its lifecycle.",
+    );
   }
 
   try {
@@ -337,12 +384,12 @@ router.post("/", requireSameOrigin, requireAdmin, async (req, res) => {
     });
 
     if (!course) {
-      return res.status(404).json({
-        error: {
-          code: "COURSE_NOT_FOUND",
-          message: "The selected course does not exist.",
-        },
-      });
+      return sendError(
+        res,
+        404,
+        "COURSE_NOT_FOUND",
+        "The selected course does not exist.",
+      );
     }
 
     if (
@@ -351,24 +398,18 @@ router.post("/", requireSameOrigin, requireAdmin, async (req, res) => {
         !isFutureStartDate(input.startDate) ||
         !isDeadlineOpen(input.enrollmentDeadline))
     ) {
-      return res.status(400).json({
-        error: {
-          code: "COHORT_CANNOT_OPEN",
-          message:
-            "Publish the course and use a valid future start date and enrollment deadline before opening enrollment.",
-        },
-      });
+      return sendError(
+        res,
+        400,
+        "COHORT_CANNOT_OPEN",
+        "Publish the course and use a valid future start date and enrollment deadline before opening enrollment.",
+      );
     }
 
     const instructorCheck = await validateInstructor(input.instructorId);
 
     if (!instructorCheck.valid) {
-      return res.status(400).json({
-        error: {
-          code: "INVALID_INSTRUCTOR",
-          message: instructorCheck.message,
-        },
-      });
+      return sendError(res, 400, "INVALID_INSTRUCTOR", instructorCheck.message);
     }
 
     const cohort = await prisma.cohort.create({
@@ -398,12 +439,12 @@ router.patch("/:id", requireSameOrigin, requireAdmin, async (req, res) => {
   const id = parseId(req.params.id);
 
   if (!id) {
-    return res.status(400).json({
-      error: {
-        code: "INVALID_COHORT_ID",
-        message: "Please provide a valid cohort ID.",
-      },
-    });
+    return sendError(
+      res,
+      400,
+      "INVALID_COHORT_ID",
+      "Please provide a valid cohort ID.",
+    );
   }
 
   const parsed = updateSchema.safeParse(req.body);
@@ -429,16 +470,17 @@ router.patch("/:id", requireSameOrigin, requireAdmin, async (req, res) => {
     });
 
     if (!existing) {
-      return res.status(404).json({
-        error: {
-          code: "COHORT_NOT_FOUND",
-          message: "The requested cohort was not found.",
-        },
-      });
+      return sendError(
+        res,
+        404,
+        "COHORT_NOT_FOUND",
+        "The requested cohort was not found.",
+      );
     }
 
     const startDate =
       input.startDate ?? existing.startDate.toISOString().slice(0, 10);
+
     const endDate =
       input.endDate ?? existing.endDate.toISOString().slice(0, 10);
 
@@ -446,109 +488,126 @@ router.patch("/:id", requireSameOrigin, requireAdmin, async (req, res) => {
       input.enrollmentDeadline === undefined
         ? (existing.enrollmentDeadline?.toISOString() ?? null)
         : input.enrollmentDeadline;
+
     const capacity = input.capacity ?? existing.capacity;
     const minimumStudents = input.minimumStudents ?? existing.minimumStudents;
+
     const nextStatus = input.status ?? existing.status;
+
     const nextInstructorId =
       input.instructorId === undefined
         ? existing.instructorId
         : input.instructorId;
 
-    if (nextStatus === "OPEN" && nextInstructorId == null) {
-      return res.status(400).json({
-        error: {
-          code: "INSTRUCTOR_REQUIRED",
-          message:
-            "Assign an active instructor before opening cohort enrolment.",
-        },
+    // Enforce the lifecycle state machine.
+    const transitionError = getTransitionError(existing.status, nextStatus);
+
+    if (transitionError) {
+      return res.status(409).json({
+        error: transitionError,
       });
     }
 
     const dateError = validateDates(startDate, endDate, enrollmentDeadline);
 
     if (dateError) {
-      return res.status(400).json({
-        error: { code: "INVALID_COHORT_DATES", message: dateError },
-      });
+      return sendError(res, 400, "INVALID_COHORT_DATES", dateError);
     }
 
     if (minimumStudents > capacity) {
-      return res.status(400).json({
-        error: {
-          code: "INVALID_COHORT_CAPACITY",
-          message: "Minimum students cannot exceed cohort capacity.",
-        },
-      });
+      return sendError(
+        res,
+        400,
+        "INVALID_COHORT_CAPACITY",
+        "Minimum students cannot exceed cohort capacity.",
+      );
     }
 
     if (capacity < existing.enrollments.length) {
-      return res.status(409).json({
-        error: {
-          code: "CAPACITY_BELOW_ENROLLMENTS",
-          message:
-            "Capacity cannot be lower than the number of active enrollments.",
-        },
-      });
+      return sendError(
+        res,
+        409,
+        "CAPACITY_BELOW_ENROLLMENTS",
+        "Capacity cannot be lower than the number of active enrollments.",
+      );
     }
 
-    if (existing.status === "CANCELLED" && nextStatus !== "CANCELLED") {
-      return res.status(409).json({
-        error: {
-          code: "CANCELLED_COHORT_TERMINAL",
-          message: "A cancelled cohort cannot be reopened or reactivated.",
-        },
-      });
-    }
-
-    if (existing.status === "COMPLETED" && nextStatus !== "COMPLETED") {
-      return res.status(409).json({
-        error: {
-          code: "COMPLETED_COHORT_TERMINAL",
-          message: "A completed cohort cannot be reactivated.",
-        },
-      });
-    }
-
+    // Validate all requirements before opening enrolment.
     if (nextStatus === "OPEN") {
+      if (nextInstructorId == null) {
+        return sendError(
+          res,
+          400,
+          "INSTRUCTOR_REQUIRED",
+          "Assign an active instructor before opening cohort enrolment.",
+        );
+      }
+
       if (
         !existing.course.isPublished ||
         !isFutureStartDate(startDate) ||
         !isDeadlineOpen(enrollmentDeadline)
       ) {
-        return res.status(400).json({
-          error: {
-            code: "COHORT_CANNOT_OPEN",
-            message:
-              "Publish the course and use a valid future start date and enrollment deadline before opening enrollment.",
-          },
-        });
+        return sendError(
+          res,
+          400,
+          "COHORT_CANNOT_OPEN",
+          "Publish the course and use a valid future start date and enrollment deadline before opening enrollment.",
+        );
       }
 
       if (capacity <= existing.enrollments.length) {
-        return res.status(409).json({
-          error: {
-            code: "COHORT_FULL",
-            message: "A full cohort cannot be opened for enrollment.",
-          },
-        });
+        return sendError(
+          res,
+          409,
+          "COHORT_FULL",
+          "A full cohort cannot be opened for enrollment.",
+        );
       }
     }
 
-    const instructorToValidate =
-      input.instructorId !== undefined
-        ? input.instructorId
-        : existing.instructorId;
+    // A cohort can start only on or after its scheduled start date.
+    if (nextStatus === "IN_PROGRESS") {
+      if (!isDateOnOrBeforeToday(startDate)) {
+        return sendError(
+          res,
+          400,
+          "COHORT_START_DATE_NOT_REACHED",
+          "A cohort cannot start before its scheduled start date.",
+        );
+      }
 
-    if (instructorToValidate != null) {
-      const instructorCheck = await validateInstructor(instructorToValidate);
+      if (nextInstructorId == null) {
+        return sendError(
+          res,
+          400,
+          "INSTRUCTOR_REQUIRED",
+          "Assign an active instructor before starting the cohort.",
+        );
+      }
+    }
+
+    // A cohort can be completed only on or after its end date.
+    if (nextStatus === "COMPLETED" && !isDateOnOrBeforeToday(endDate)) {
+      return sendError(
+        res,
+        400,
+        "COHORT_END_DATE_NOT_REACHED",
+        "A cohort cannot be completed before its scheduled end date.",
+      );
+    }
+
+    // Validate the selected instructor whenever one is assigned.
+    if (nextInstructorId != null) {
+      const instructorCheck = await validateInstructor(nextInstructorId);
 
       if (!instructorCheck.valid) {
-        return res.status(400).json({
-          error: {
-            code: "INVALID_INSTRUCTOR",
-            message: instructorCheck.message,
-          },
-        });
+        return sendError(
+          res,
+          400,
+          "INVALID_INSTRUCTOR",
+          instructorCheck.message,
+        );
       }
     }
 
