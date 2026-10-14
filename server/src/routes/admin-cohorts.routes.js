@@ -165,10 +165,10 @@ async function validateInstructor(instructorId) {
     };
   }
 
-  if (!["INSTRUCTOR", "ADMIN"].includes(instructor.role)) {
+  if (instructor.role !== "INSTRUCTOR") {
     return {
       valid: false,
-      message: "The selected user is not an instructor or administrator.",
+      message: "The selected user is not an instructor.",
     };
   }
 
@@ -299,6 +299,15 @@ router.post("/", requireSameOrigin, requireAdmin, async (req, res) => {
   }
 
   const input = parsed.data;
+
+  if (input.status === "OPEN" && input.instructorId == null) {
+    return res.status(400).json({
+      error: {
+        code: "INSTRUCTOR_REQUIRED",
+        message: "Assign an active instructor before opening cohort enrolment.",
+      },
+    });
+  }
 
   const dateError = validateDates(
     input.startDate,
@@ -437,10 +446,23 @@ router.patch("/:id", requireSameOrigin, requireAdmin, async (req, res) => {
       input.enrollmentDeadline === undefined
         ? (existing.enrollmentDeadline?.toISOString() ?? null)
         : input.enrollmentDeadline;
-
     const capacity = input.capacity ?? existing.capacity;
     const minimumStudents = input.minimumStudents ?? existing.minimumStudents;
     const nextStatus = input.status ?? existing.status;
+    const nextInstructorId =
+      input.instructorId === undefined
+        ? existing.instructorId
+        : input.instructorId;
+
+    if (nextStatus === "OPEN" && nextInstructorId == null) {
+      return res.status(400).json({
+        error: {
+          code: "INSTRUCTOR_REQUIRED",
+          message:
+            "Assign an active instructor before opening cohort enrolment.",
+        },
+      });
+    }
 
     const dateError = validateDates(startDate, endDate, enrollmentDeadline);
 
@@ -512,8 +534,13 @@ router.patch("/:id", requireSameOrigin, requireAdmin, async (req, res) => {
       }
     }
 
-    if (input.instructorId !== undefined) {
-      const instructorCheck = await validateInstructor(input.instructorId);
+    const instructorToValidate =
+      input.instructorId !== undefined
+        ? input.instructorId
+        : existing.instructorId;
+
+    if (instructorToValidate != null) {
+      const instructorCheck = await validateInstructor(instructorToValidate);
 
       if (!instructorCheck.valid) {
         return res.status(400).json({

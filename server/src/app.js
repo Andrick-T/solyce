@@ -1,4 +1,4 @@
-import "./config/env.js";
+﻿import "./config/env.js";
 
 import express from "express";
 import cors from "cors";
@@ -10,6 +10,7 @@ import publicRoutes from "./routes/public.routes.js";
 import adminAuthRoutes from "./routes/admin-auth.routes.js";
 import adminCoursesRoutes from "./routes/admin-courses.routes.js";
 import adminCohortsRoutes from "./routes/admin-cohorts.routes.js";
+import adminInstructorsRoutes from "./routes/admin-instructor.routes.js";
 
 const app = express();
 const port = Number(process.env.PORT ?? 5000);
@@ -58,18 +59,13 @@ app.use(
   }),
 );
 
-// Existing public API — preserved.
+// Existing public API â€” preserved.
 app.use("/api", publicRoutes);
-
-// New admin authentication API.
-app.use("/api/admin/auth", adminAuthRoutes);
-app.use("/api/admin/auth", adminAuthRoutes);
-app.use("/api/admin/courses", adminCoursesRoutes);
 
 app.use("/api/admin/auth", adminAuthRoutes);
 app.use("/api/admin/courses", adminCoursesRoutes);
 app.use("/api/admin/cohorts", adminCohortsRoutes);
-
+app.use("/api/admin/instructors", adminInstructorsRoutes);
 app.get("/api/health", async (_req, res) => {
   try {
     await prisma.$queryRaw`SELECT 1`;

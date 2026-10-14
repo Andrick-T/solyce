@@ -1,0 +1,1346 @@
+import { useCallback, useEffect, useMemo, useState } from "react";
+import "./AdminApp.css";
+
+const API = (
+  import.meta.env.VITE_API_BASE_URL || "http://localhost:5000/api"
+).replace(/\/$/, "");
+const money = (value) =>
+  `${new Intl.NumberFormat("fr-FR", { maximumFractionDigits: 0 }).format(value ?? 0)} XAF`;
+const date = (value) =>
+  value
+    ? new Intl.DateTimeFormat("en-GB", {
+        day: "2-digit",
+        month: "short",
+        year: "numeric",
+        timeZone: "Africa/Douala",
+      }).format(new Date(value))
+    : "—";
+const initialCourse = {
+  slug: "",
+  title: "",
+  description: "",
+  language: "ENGLISH",
+  examType: "TCF",
+  durationWeeks: 12,
+  curriculum: "",
+  priceXaf: 0,
+  isPublished: false,
+};
+const initialCohort = {
+  name: "",
+  courseId: "",
+  instructorId: "",
+  startDate: "",
+  endDate: "",
+  enrollmentDeadline: "",
+  scheduleDescription: "",
+  timezone: "Africa/Douala",
+  capacity: 8,
+  minimumStudents: 6,
+  priceXaf: "",
+  status: "DRAFT",
+};
+
+async function request(path, options = {}) {
+  const response = await fetch(`${API}${path}`, {
+    credentials: "include",
+    ...options,
+    headers: {
+      ...(options.body ? { "Content-Type": "application/json" } : {}),
+      ...(options.headers || {}),
+    },
+  });
+  const result =
+    response.status === 204 ? {} : await response.json().catch(() => ({}));
+  if (!response.ok)
+    throw new Error(
+      result?.error?.message || `Request failed (${response.status}).`,
+    );
+  return result;
+}
+
+function Mark() {
+  return <span className="admin-brand-mark">S.</span>;
+}
+function Icon({ name }) {
+  const paths = {
+    overview: (
+      <>
+        <rect x="3" y="3" width="7" height="7" rx="1" />
+        <rect x="14" y="3" width="7" height="7" rx="1" />
+        <rect x="3" y="14" width="7" height="7" rx="1" />
+        <rect x="14" y="14" width="7" height="7" rx="1" />
+      </>
+    ),
+    courses: (
+      <>
+        <path d="m3 7 9-4 9 4-9 4-9-4Z" />
+        <path d="m5 9 7 3 7-3M5 13l7 3 7-3M5 9v7l7 4 7-4V9" />
+      </>
+    ),
+    cohorts: (
+      <>
+        <rect x="3" y="5" width="18" height="16" rx="2" />
+        <path d="M7 3v4M17 3v4M3 10h18M8 14h3M8 17h6" />
+      </>
+    ),
+    students: (
+      <>
+        <circle cx="9" cy="8" r="4" />
+        <path d="M2 21v-2a7 7 0 0 1 14 0v2M17 4a4 4 0 0 1 0 8M19 15a5 5 0 0 1 3 4v2" />
+      </>
+    ),
+    payments: (
+      <>
+        <rect x="2" y="5" width="20" height="14" rx="2" />
+        <path d="M2 10h20M6 15h4" />
+      </>
+    ),
+    logout: (
+      <>
+        <path d="M10 17l5-5-5-5M15 12H3" />
+        <path d="M12 3h6a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-6" />
+      </>
+    ),
+  };
+  return (
+    <svg
+      aria-hidden="true"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.7"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    >
+      {paths[name] || paths.overview}
+    </svg>
+  );
+}
+
+function Login({ onLogin }) {
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState("");
+  async function submit(event) {
+    event.preventDefault();
+    setBusy(true);
+    setError("");
+    try {
+      await request("/admin/auth/login", {
+        method: "POST",
+        headers: { Origin: window.location.origin },
+        body: JSON.stringify({ email: email.trim(), password }),
+      });
+      await onLogin();
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setBusy(false);
+    }
+  }
+  return (
+    <main className="admin-login-page">
+      <div className="admin-login-card">
+        <div className="admin-login-brand">
+          <Mark />
+          <span>
+            solyce<span className="admin-dot">.</span>
+          </span>
+        </div>
+        <p className="admin-eyebrow">ADMINISTRATION PORTAL</p>
+        <h1>Good work starts with clarity.</h1>
+        <p className="admin-login-intro">
+          Sign in to manage programs, cohorts and the learning experience.
+        </p>
+        <form onSubmit={submit} className="admin-form">
+          <label>
+            Email address
+            <input
+              autoComplete="username"
+              type="email"
+              required
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              placeholder="you@solyce.com"
+            />
+          </label>
+          <label>
+            Password
+            <input
+              autoComplete="current-password"
+              type="password"
+              required
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              placeholder="Enter your password"
+            />
+          </label>
+          {error && (
+            <div className="admin-alert" role="alert">
+              {error}
+            </div>
+          )}
+          <button className="admin-button primary full" disabled={busy}>
+            {busy ? "Signing in…" : "Sign in to Solyce"}
+            <span>↗</span>
+          </button>
+        </form>
+        <p className="admin-login-foot">
+          Secure access for authorised Solyce administrators.
+        </p>
+      </div>
+    </main>
+  );
+}
+
+function Field({ label, children, wide = false }) {
+  return (
+    <label className={`admin-field${wide ? " wide" : ""}`}>
+      <span>{label}</span>
+      {children}
+    </label>
+  );
+}
+function Modal({ title, subtitle, onClose, children }) {
+  return (
+    <div
+      className="admin-modal-backdrop"
+      role="presentation"
+      onMouseDown={(e) => {
+        if (e.target === e.currentTarget) onClose();
+      }}
+    >
+      <section
+        className="admin-modal"
+        role="dialog"
+        aria-modal="true"
+        aria-label={title}
+      >
+        <div className="admin-modal-head">
+          <div>
+            <p className="admin-eyebrow">SOLYCE WORKSPACE</p>
+            <h2>{title}</h2>
+            {subtitle && <p>{subtitle}</p>}
+          </div>
+          <button
+            className="admin-icon-button"
+            onClick={onClose}
+            aria-label="Close dialog"
+          >
+            ×
+          </button>
+        </div>
+        {children}
+      </section>
+    </div>
+  );
+}
+
+export default function AdminApp() {
+  const [user, setUser] = useState(null);
+  const [authLoading, setAuthLoading] = useState(true);
+  const [page, setPage] = useState("overview");
+  const [courses, setCourses] = useState([]);
+  const [cohorts, setCohorts] = useState([]);
+  const [instructors, setInstructors] = useState([]);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
+  const [notice, setNotice] = useState("");
+  const [courseModal, setCourseModal] = useState(null);
+  const [cohortModal, setCohortModal] = useState(null);
+  const [saving, setSaving] = useState(false);
+  const [courseQuery, setCourseQuery] = useState("");
+  const [cohortStatus, setCohortStatus] = useState("ALL");
+
+  const checkSession = useCallback(async () => {
+    try {
+      const result = await request("/admin/auth/me");
+      setUser(result.data?.user || result.user || result.data || result);
+    } catch {
+      setUser(null);
+    } finally {
+      setAuthLoading(false);
+    }
+  }, []);
+  useEffect(() => {
+    const timeout = setTimeout(() => {
+      checkSession();
+    }, 0);
+    return () => clearTimeout(timeout);
+  }, [checkSession]);
+
+  const loadData = useCallback(async () => {
+    if (!user) return;
+    setLoading(true);
+    setError("");
+    try {
+      const [courseResult, cohortResult, instructorResult] = await Promise.all([
+        request("/admin/courses"),
+        request("/admin/cohorts"),
+        request("/admin/instructors"),
+      ]);
+      setCourses(courseResult.data || []);
+      setCohorts(cohortResult.data || []);
+      setInstructors(instructorResult.data || []);
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setLoading(false);
+    }
+  }, [user]);
+  useEffect(() => {
+    const timeout = setTimeout(() => {
+      loadData();
+    }, 0);
+    return () => clearTimeout(timeout);
+  }, [loadData]);
+
+  async function logout() {
+    try {
+      await request("/admin/auth/logout", {
+        method: "POST",
+        headers: { Origin: window.location.origin },
+      });
+    } catch {
+      // Ignore logout failures and still clear local session.
+    }
+    setUser(null);
+  }
+  function flash(message) {
+    setNotice(message);
+    window.setTimeout(() => setNotice(""), 4000);
+  }
+
+  async function saveCourse(event) {
+    event.preventDefault();
+    setSaving(true);
+    setError("");
+    const data = {
+      ...courseModal.form,
+      durationWeeks: Number(courseModal.form.durationWeeks),
+      priceXaf: Number(courseModal.form.priceXaf),
+    };
+    try {
+      if (courseModal.id)
+        await request(`/admin/courses/${courseModal.id}`, {
+          method: "PATCH",
+          headers: { Origin: window.location.origin },
+          body: JSON.stringify(data),
+        });
+      else
+        await request("/admin/courses", {
+          method: "POST",
+          headers: { Origin: window.location.origin },
+          body: JSON.stringify(data),
+        });
+      setCourseModal(null);
+      await loadData();
+      flash(courseModal.id ? "Program updated." : "Program created.");
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setSaving(false);
+    }
+  }
+  async function saveCohort(event) {
+    event.preventDefault();
+    setSaving(true);
+    setError("");
+    const f = cohortModal.form;
+    const data = {
+      ...f,
+      courseId: Number(f.courseId),
+      instructorId: f.instructorId ? Number(f.instructorId) : null,
+      capacity: Number(f.capacity),
+      minimumStudents: Number(f.minimumStudents),
+      priceXaf: f.priceXaf === "" ? null : Number(f.priceXaf),
+      enrollmentDeadline: f.enrollmentDeadline
+        ? new Date(f.enrollmentDeadline).toISOString()
+        : null,
+    };
+    if (cohortModal.id) delete data.courseId;
+    try {
+      if (cohortModal.id)
+        await request(`/admin/cohorts/${cohortModal.id}`, {
+          method: "PATCH",
+          headers: { Origin: window.location.origin },
+          body: JSON.stringify(data),
+        });
+      else
+        await request("/admin/cohorts", {
+          method: "POST",
+          headers: { Origin: window.location.origin },
+          body: JSON.stringify(data),
+        });
+      setCohortModal(null);
+      await loadData();
+      flash(cohortModal.id ? "Cohort updated." : "Cohort created.");
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setSaving(false);
+    }
+  }
+  function openCourse(course) {
+    setError("");
+    setCourseModal({
+      id: course?.id,
+      form: course
+        ? {
+            slug: course.slug,
+            title: course.title,
+            description: course.description,
+            language: course.language,
+            examType: course.examType,
+            durationWeeks: course.durationWeeks,
+            curriculum: course.curriculum || "",
+            priceXaf: course.priceXaf,
+            isPublished: course.isPublished,
+          }
+        : { ...initialCourse },
+    });
+  }
+  function openCohort(cohort) {
+    setError("");
+    setCohortModal({
+      id: cohort?.id,
+      form: cohort
+        ? {
+            name: cohort.name,
+            courseId: String(cohort.courseId),
+            instructorId: cohort.instructorId
+              ? String(cohort.instructorId)
+              : "",
+            startDate: String(cohort.startDate).slice(0, 10),
+            endDate: String(cohort.endDate).slice(0, 10),
+            enrollmentDeadline: cohort.enrollmentDeadline
+              ? new Date(cohort.enrollmentDeadline).toISOString().slice(0, 16)
+              : "",
+            scheduleDescription: cohort.scheduleDescription,
+            timezone: cohort.timezone || "Africa/Douala",
+            capacity: cohort.capacity,
+            minimumStudents: cohort.minimumStudents,
+            priceXaf: cohort.priceXaf ?? "",
+            status: cohort.status,
+          }
+        : {
+            ...initialCohort,
+            courseId: courses[0] ? String(courses[0].id) : "",
+          },
+    });
+  }
+  const filteredCourses = useMemo(
+    () =>
+      courses.filter((c) =>
+        `${c.title} ${c.examType} ${c.slug}`
+          .toLowerCase()
+          .includes(courseQuery.toLowerCase()),
+      ),
+    [courses, courseQuery],
+  );
+  const filteredCohorts = useMemo(
+    () =>
+      cohorts.filter(
+        (c) => cohortStatus === "ALL" || c.status === cohortStatus,
+      ),
+    [cohorts, cohortStatus],
+  );
+
+  if (authLoading)
+    return (
+      <div className="admin-loading">
+        <span className="admin-spinner" />
+        Checking your session…
+      </div>
+    );
+  if (!user) return <Login onLogin={checkSession} />;
+
+  const nav = [
+    { id: "overview", label: "Overview", icon: "overview" },
+    { id: "courses", label: "Programs", icon: "courses" },
+    { id: "cohorts", label: "Cohorts", icon: "cohorts" },
+    { id: "students", label: "Students", icon: "students" },
+    { id: "payments", label: "Payments", icon: "payments" },
+  ];
+  const activeStudents = cohorts.reduce(
+    (sum, c) => sum + (c.enrolledCount || 0),
+    0,
+  );
+  return (
+    <div className="admin-shell">
+      <aside className="admin-sidebar">
+        <a className="admin-brand" href="/" aria-label="Solyce home">
+          <Mark />
+          <span>
+            solyce<span className="admin-dot">.</span>
+          </span>
+        </a>
+        <div className="admin-workspace-label">WORKSPACE</div>
+        <nav className="admin-nav" aria-label="Administration">
+          {nav.map((item) => (
+            <button
+              key={item.id}
+              className={page === item.id ? "active" : ""}
+              onClick={() => {
+                setPage(item.id);
+                setError("");
+              }}
+            >
+              <Icon name={item.icon} />
+              <span>{item.label}</span>
+              {item.id === "payments" && <span className="nav-soon">SOON</span>}
+            </button>
+          ))}
+        </nav>
+        <div className="admin-sidebar-bottom">
+          <div className="admin-help-card">
+            <span className="help-mark">✳</span>
+            <strong>Built around progress.</strong>
+            <p>Keep every learning journey moving forward.</p>
+          </div>
+          <button className="admin-logout" onClick={logout}>
+            <Icon name="logout" />
+            Sign out
+          </button>
+        </div>
+      </aside>
+      <main className="admin-main">
+        <header className="admin-topbar">
+          <div className="admin-breadcrumb">
+            <span>Workspace</span>
+            <span>/</span>
+            <strong>
+              {nav.find((n) => n.id === page)?.label || "Overview"}
+            </strong>
+          </div>
+          <div className="admin-topbar-right">
+            <span className="admin-live-dot" /> <span>Admin workspace</span>
+            <div className="admin-avatar">
+              {(user.fullName || user.name || "A").slice(0, 1).toUpperCase()}
+            </div>
+            <div className="admin-user-copy">
+              <strong>{user.fullName || user.name || "Administrator"}</strong>
+              <span>Administrator</span>
+            </div>
+          </div>
+        </header>
+        <div className="admin-content">
+          <div className="admin-page-heading">
+            <div>
+              <p className="admin-eyebrow">SOLYCE / MANAGEMENT</p>
+              <h1>
+                {page === "overview"
+                  ? "A clearer view of progress."
+                  : page === "courses"
+                    ? "Programs"
+                    : page === "cohorts"
+                      ? "Cohorts"
+                      : page === "students"
+                        ? "Student management"
+                        : "Payments"}
+              </h1>
+              <p>
+                {page === "overview"
+                  ? "Your learning programs, upcoming intakes and operations at a glance."
+                  : page === "courses"
+                    ? "Create, refine and publish the programs learners can discover."
+                    : page === "cohorts"
+                      ? "Plan live learning groups, assign instructors and manage enrolment windows."
+                      : page === "students"
+                        ? "Student enrolment workflows are the next implementation milestone."
+                        : "Payment review and verification are the next implementation milestone."}
+              </p>
+            </div>
+            <div className="admin-heading-actions">
+              <button
+                className="admin-button subtle"
+                onClick={loadData}
+                disabled={loading}
+              >
+                ↻ Refresh
+              </button>
+              {page === "courses" && (
+                <button
+                  className="admin-button primary"
+                  onClick={() => openCourse(null)}
+                >
+                  ＋ New program
+                </button>
+              )}
+              {page === "cohorts" && (
+                <button
+                  className="admin-button primary"
+                  onClick={() => openCohort(null)}
+                  disabled={!courses.length}
+                >
+                  ＋ New cohort
+                </button>
+              )}
+            </div>
+          </div>
+          {error && (
+            <div className="admin-alert global-alert" role="alert">
+              <span>{error}</span>
+              <button onClick={() => setError("")} aria-label="Dismiss error">
+                ×
+              </button>
+            </div>
+          )}
+          {notice && (
+            <div className="admin-notice" role="status">
+              ✓ {notice}
+            </div>
+          )}
+          {loading && (
+            <div className="admin-inline-loading">
+              <span className="admin-spinner" />
+              Syncing workspace data…
+            </div>
+          )}
+          {page === "overview" && (
+            <>
+              <div className="admin-stat-grid">
+                <article className="admin-stat-card">
+                  <span className="stat-label">Total programs</span>
+                  <span className="stat-value">{courses.length}</span>
+                  <span className="stat-foot">
+                    <span className="stat-indicator" />{" "}
+                    {courses.filter((c) => c.isPublished).length} published
+                  </span>
+                  <span className="stat-icon">
+                    <Icon name="courses" />
+                  </span>
+                </article>
+                <article className="admin-stat-card">
+                  <span className="stat-label">Active cohorts</span>
+                  <span className="stat-value">
+                    {
+                      cohorts.filter((c) =>
+                        ["OPEN", "IN_PROGRESS"].includes(c.status),
+                      ).length
+                    }
+                  </span>
+                  <span className="stat-foot">
+                    Open enrolment and live classes
+                  </span>
+                  <span className="stat-icon">
+                    <Icon name="cohorts" />
+                  </span>
+                </article>
+                <article className="admin-stat-card">
+                  <span className="stat-label">Enrolled learners</span>
+                  <span className="stat-value">{activeStudents}</span>
+                  <span className="stat-foot">Across all cohorts</span>
+                  <span className="stat-icon">
+                    <Icon name="students" />
+                  </span>
+                </article>
+                <article className="admin-stat-card">
+                  <span className="stat-label">Instructor coverage</span>
+                  <span className="stat-value">
+                    {cohorts.filter((c) => c.instructorId).length}
+                    <small> / {cohorts.length}</small>
+                  </span>
+                  <span className="stat-foot">
+                    Cohorts with an assigned instructor
+                  </span>
+                  <span className="stat-icon">
+                    <Icon name="overview" />
+                  </span>
+                </article>
+              </div>
+              <div className="admin-overview-grid">
+                <section className="admin-panel">
+                  <div className="admin-panel-heading">
+                    <div>
+                      <p className="admin-eyebrow">RECENT ACTIVITY</p>
+                      <h2>Recently updated programs</h2>
+                    </div>
+                    <button
+                      className="admin-text-button"
+                      onClick={() => setPage("courses")}
+                    >
+                      View all ↗
+                    </button>
+                  </div>
+                  {courses.length ? (
+                    courses.slice(0, 5).map((c) => (
+                      <div className="admin-list-row" key={c.id}>
+                        <div className="admin-course-monogram">
+                          {c.examType?.slice(0, 2).toUpperCase() || "S."}
+                        </div>
+                        <div className="admin-row-main">
+                          <strong>{c.title}</strong>
+                          <span>
+                            {c.durationWeeks} weeks ·{" "}
+                            {c.language === "FRENCH" ? "French" : "English"}
+                          </span>
+                        </div>
+                        <span
+                          className={`admin-status ${c.isPublished ? "published" : "draft"}`}
+                        >
+                          {c.isPublished ? "Published" : "Draft"}
+                        </span>
+                        <strong className="admin-row-price">
+                          {money(c.priceXaf)}
+                        </strong>
+                      </div>
+                    ))
+                  ) : (
+                    <div className="admin-empty">
+                      No programs yet. Create your first program to get started.
+                    </div>
+                  )}
+                </section>
+                <section className="admin-panel">
+                  <div className="admin-panel-heading">
+                    <div>
+                      <p className="admin-eyebrow">COHORT READINESS</p>
+                      <h2>Upcoming cohorts</h2>
+                    </div>
+                    <button
+                      className="admin-text-button"
+                      onClick={() => setPage("cohorts")}
+                    >
+                      Manage ↗
+                    </button>
+                  </div>
+                  {cohorts.length ? (
+                    cohorts.slice(0, 5).map((c) => (
+                      <div className="admin-cohort-row" key={c.id}>
+                        <div className="admin-date-tile">
+                          <strong>{new Date(c.startDate).getUTCDate()}</strong>
+                          <span>
+                            {new Date(c.startDate)
+                              .toLocaleString("en-GB", {
+                                month: "short",
+                                timeZone: "UTC",
+                              })
+                              .toUpperCase()}
+                          </span>
+                        </div>
+                        <div className="admin-row-main">
+                          <strong>{c.name}</strong>
+                          <span>
+                            {c.course?.title || "Program"} ·{" "}
+                            {c.instructor?.fullName ||
+                              "Instructor not assigned"}
+                          </span>
+                          <div className="admin-mini-progress">
+                            <span
+                              style={{
+                                width: `${Math.min(100, ((c.enrolledCount || 0) / Math.max(1, c.capacity)) * 100)}%`,
+                              }}
+                            />
+                          </div>
+                        </div>
+                        <span
+                          className={`admin-status status-${c.status.toLowerCase()}`}
+                        >
+                          {c.status.replace("_", " ")}
+                        </span>
+                      </div>
+                    ))
+                  ) : (
+                    <div className="admin-empty">
+                      No cohorts yet. Create a cohort from a program.
+                    </div>
+                  )}
+                  <div className="admin-readiness-note">
+                    <span>✳</span>
+                    <p>
+                      <strong>Live learning comes first.</strong> Every cohort
+                      must have an assigned active instructor before enrolment
+                      can open.
+                    </p>
+                  </div>
+                </section>
+              </div>
+            </>
+          )}
+          {page === "courses" && (
+            <section className="admin-panel admin-table-panel">
+              <div className="admin-panel-heading">
+                <div>
+                  <p className="admin-eyebrow">PROGRAM CATALOGUE</p>
+                  <h2>
+                    All programs{" "}
+                    <span className="count-pill">{courses.length}</span>
+                  </h2>
+                </div>
+                <input
+                  className="admin-search"
+                  value={courseQuery}
+                  onChange={(e) => setCourseQuery(e.target.value)}
+                  placeholder="Search programs…"
+                  aria-label="Search programs"
+                />
+              </div>
+              <div className="admin-table-wrap">
+                <table className="admin-table">
+                  <thead>
+                    <tr>
+                      <th>Program</th>
+                      <th>Language</th>
+                      <th>Duration</th>
+                      <th>Tuition</th>
+                      <th>Status</th>
+                      <th>Updated</th>
+                      <th />
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {filteredCourses.map((c) => (
+                      <tr key={c.id}>
+                        <td>
+                          <div className="table-primary">{c.title}</div>
+                          <div className="table-secondary">
+                            {c.examType} · /{c.slug}
+                          </div>
+                        </td>
+                        <td>
+                          {c.language === "FRENCH" ? "French" : "English"}
+                        </td>
+                        <td>{c.durationWeeks} weeks</td>
+                        <td className="table-money">{money(c.priceXaf)}</td>
+                        <td>
+                          <span
+                            className={`admin-status ${c.isPublished ? "published" : "draft"}`}
+                          >
+                            {c.isPublished ? "Published" : "Draft"}
+                          </span>
+                        </td>
+                        <td>{date(c.updatedAt)}</td>
+                        <td>
+                          <button
+                            className="admin-button small subtle"
+                            onClick={() => openCourse(c)}
+                          >
+                            Edit
+                          </button>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+                {!filteredCourses.length && (
+                  <div className="admin-empty">
+                    No programs match this search.
+                  </div>
+                )}
+              </div>
+            </section>
+          )}
+          {page === "cohorts" && (
+            <section className="admin-panel admin-table-panel">
+              <div className="admin-panel-heading">
+                <div>
+                  <p className="admin-eyebrow">LIVE LEARNING OPERATIONS</p>
+                  <h2>
+                    All cohorts{" "}
+                    <span className="count-pill">{cohorts.length}</span>
+                  </h2>
+                </div>
+                <select
+                  className="admin-search"
+                  value={cohortStatus}
+                  onChange={(e) => setCohortStatus(e.target.value)}
+                  aria-label="Filter cohorts by status"
+                >
+                  <option value="ALL">All statuses</option>
+                  {[
+                    "DRAFT",
+                    "OPEN",
+                    "IN_PROGRESS",
+                    "COMPLETED",
+                    "CANCELLED",
+                  ].map((s) => (
+                    <option key={s}>{s}</option>
+                  ))}
+                </select>
+              </div>
+              <div className="admin-table-wrap">
+                <table className="admin-table">
+                  <thead>
+                    <tr>
+                      <th>Cohort</th>
+                      <th>Program</th>
+                      <th>Instructor</th>
+                      <th>Schedule</th>
+                      <th>Places</th>
+                      <th>Status</th>
+                      <th />
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {filteredCohorts.map((c) => (
+                      <tr key={c.id}>
+                        <td>
+                          <div className="table-primary">{c.name}</div>
+                          <div className="table-secondary">
+                            {date(c.startDate)} – {date(c.endDate)}
+                          </div>
+                        </td>
+                        <td>
+                          {c.course?.title ||
+                            courses.find((x) => x.id === c.courseId)?.title ||
+                            "—"}
+                        </td>
+                        <td>
+                          {c.instructor?.fullName || (
+                            <span className="unassigned">Not assigned</span>
+                          )}
+                        </td>
+                        <td>
+                          <div className="table-primary">
+                            {c.scheduleDescription}
+                          </div>
+                          <div className="table-secondary">{c.timezone}</div>
+                        </td>
+                        <td>
+                          {c.enrolledCount || 0} / {c.capacity}
+                        </td>
+                        <td>
+                          <span
+                            className={`admin-status status-${c.status.toLowerCase()}`}
+                          >
+                            {c.status.replace("_", " ")}
+                          </span>
+                        </td>
+                        <td>
+                          <button
+                            className="admin-button small subtle"
+                            onClick={() => openCohort(c)}
+                          >
+                            Edit
+                          </button>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+                {!filteredCohorts.length && (
+                  <div className="admin-empty">
+                    No cohorts match this status.
+                  </div>
+                )}
+              </div>
+            </section>
+          )}
+          {page === "students" && (
+            <section className="admin-panel admin-coming-panel">
+              <div className="coming-symbol">
+                <Icon name="students" />
+              </div>
+              <p className="admin-eyebrow">NEXT IMPLEMENTATION MILESTONE</p>
+              <h2>Student enrolment, built end to end.</h2>
+              <p>
+                This area will include learner records, cohort applications,
+                enrolment status and payment-linked confirmation. We will
+                connect it to the existing Enrollment model rather than create a
+                parallel data structure.
+              </p>
+              <button
+                className="admin-button subtle"
+                onClick={() => setPage("cohorts")}
+              >
+                Review cohorts first ↗
+              </button>
+            </section>
+          )}
+          {page === "payments" && (
+            <section className="admin-panel admin-coming-panel">
+              <div className="coming-symbol">
+                <Icon name="payments" />
+              </div>
+              <p className="admin-eyebrow">NEXT IMPLEMENTATION MILESTONE</p>
+              <h2>Payment review with an audit trail.</h2>
+              <p>
+                Payment submissions, transaction references, manual verification
+                and enrolment confirmation will be implemented server-side. No
+                learner access will be granted merely because a payment was
+                submitted.
+              </p>
+              <button
+                className="admin-button subtle"
+                onClick={() => setPage("students")}
+              >
+                View enrolment plan ↗
+              </button>
+            </section>
+          )}
+          <footer className="admin-footer">
+            <span>© {new Date().getFullYear()} Solyce · Administration</span>
+            <span>Purposeful learning. Meaningful progress.</span>
+          </footer>
+        </div>
+      </main>
+      {courseModal && (
+        <Modal
+          title={courseModal.id ? "Edit program" : "Create a program"}
+          subtitle="Program details appear in the public catalogue when published."
+          onClose={() => setCourseModal(null)}
+        >
+          <form className="admin-form-grid" onSubmit={saveCourse}>
+            <Field label="Program title">
+              <input
+                required
+                minLength="3"
+                maxLength="191"
+                value={courseModal.form.title}
+                onChange={(e) =>
+                  setCourseModal((m) => ({
+                    ...m,
+                    form: { ...m.form, title: e.target.value },
+                  }))
+                }
+              />
+            </Field>
+            <Field label="URL slug">
+              <input
+                required
+                pattern="[a-z0-9]+(?:-[a-z0-9]+)*"
+                value={courseModal.form.slug}
+                onChange={(e) =>
+                  setCourseModal((m) => ({
+                    ...m,
+                    form: { ...m.form, slug: e.target.value },
+                  }))
+                }
+                placeholder="tcf-preparation"
+              />
+            </Field>
+            <Field label="Exam / program type">
+              <input
+                required
+                maxLength="50"
+                value={courseModal.form.examType}
+                onChange={(e) =>
+                  setCourseModal((m) => ({
+                    ...m,
+                    form: { ...m.form, examType: e.target.value },
+                  }))
+                }
+              />
+            </Field>
+            <Field label="Language">
+              <select
+                value={courseModal.form.language}
+                onChange={(e) =>
+                  setCourseModal((m) => ({
+                    ...m,
+                    form: { ...m.form, language: e.target.value },
+                  }))
+                }
+              >
+                <option value="ENGLISH">English</option>
+                <option value="FRENCH">French</option>
+              </select>
+            </Field>
+            <Field label="Duration (weeks)">
+              <input
+                type="number"
+                min="1"
+                max="104"
+                required
+                value={courseModal.form.durationWeeks}
+                onChange={(e) =>
+                  setCourseModal((m) => ({
+                    ...m,
+                    form: { ...m.form, durationWeeks: e.target.value },
+                  }))
+                }
+              />
+            </Field>
+            <Field label="Tuition (XAF)">
+              <input
+                type="number"
+                min="0"
+                step="1"
+                required
+                value={courseModal.form.priceXaf}
+                onChange={(e) =>
+                  setCourseModal((m) => ({
+                    ...m,
+                    form: { ...m.form, priceXaf: e.target.value },
+                  }))
+                }
+              />
+            </Field>
+            <Field label="Description" wide>
+              <textarea
+                rows="4"
+                minLength="10"
+                required
+                value={courseModal.form.description}
+                onChange={(e) =>
+                  setCourseModal((m) => ({
+                    ...m,
+                    form: { ...m.form, description: e.target.value },
+                  }))
+                }
+              />
+            </Field>
+            <Field label="Curriculum (one item per line)" wide>
+              <textarea
+                rows="4"
+                value={courseModal.form.curriculum}
+                onChange={(e) =>
+                  setCourseModal((m) => ({
+                    ...m,
+                    form: { ...m.form, curriculum: e.target.value },
+                  }))
+                }
+              />
+            </Field>
+            <label className="admin-publish-toggle">
+              <input
+                type="checkbox"
+                checked={courseModal.form.isPublished}
+                onChange={(e) =>
+                  setCourseModal((m) => ({
+                    ...m,
+                    form: { ...m.form, isPublished: e.target.checked },
+                  }))
+                }
+              />
+              <span>
+                <strong>Publish this program</strong>
+                <small>
+                  Published programs are visible in the public catalogue.
+                </small>
+              </span>
+            </label>
+            {error && (
+              <div className="admin-alert wide" role="alert">
+                {error}
+              </div>
+            )}
+            <div className="admin-modal-actions">
+              <button
+                type="button"
+                className="admin-button subtle"
+                onClick={() => setCourseModal(null)}
+              >
+                Cancel
+              </button>
+              <button className="admin-button primary" disabled={saving}>
+                {saving ? "Saving…" : "Save program"}
+              </button>
+            </div>
+          </form>
+        </Modal>
+      )}
+      {cohortModal && (
+        <Modal
+          title={cohortModal.id ? "Edit cohort" : "Create a cohort"}
+          subtitle="Every open cohort requires a published program and an assigned active instructor."
+          onClose={() => setCohortModal(null)}
+        >
+          <form className="admin-form-grid" onSubmit={saveCohort}>
+            <Field label="Cohort name" wide>
+              <input
+                required
+                minLength="2"
+                maxLength="150"
+                value={cohortModal.form.name}
+                onChange={(e) =>
+                  setCohortModal((m) => ({
+                    ...m,
+                    form: { ...m.form, name: e.target.value },
+                  }))
+                }
+              />
+            </Field>
+            <Field label="Program">
+              <select
+                required
+                value={cohortModal.form.courseId}
+                onChange={(e) =>
+                  setCohortModal((m) => ({
+                    ...m,
+                    form: { ...m.form, courseId: e.target.value },
+                  }))
+                }
+              >
+                <option value="">Select program</option>
+                {courses.map((c) => (
+                  <option key={c.id} value={c.id}>
+                    {c.title}
+                    {!c.isPublished ? " (draft)" : ""}
+                  </option>
+                ))}
+              </select>
+            </Field>
+            <Field label="Assigned instructor">
+              <select
+                required
+                value={cohortModal.form.instructorId}
+                onChange={(e) =>
+                  setCohortModal((m) => ({
+                    ...m,
+                    form: { ...m.form, instructorId: e.target.value },
+                  }))
+                }
+              >
+                <option value="">Select an active instructor</option>
+                {instructors.map((i) => (
+                  <option key={i.id} value={i.id}>
+                    {i.fullName} · {i.email}
+                  </option>
+                ))}
+              </select>
+            </Field>
+            <Field label="Start date">
+              <input
+                type="date"
+                required
+                value={cohortModal.form.startDate}
+                onChange={(e) =>
+                  setCohortModal((m) => ({
+                    ...m,
+                    form: { ...m.form, startDate: e.target.value },
+                  }))
+                }
+              />
+            </Field>
+            <Field label="End date">
+              <input
+                type="date"
+                required
+                value={cohortModal.form.endDate}
+                onChange={(e) =>
+                  setCohortModal((m) => ({
+                    ...m,
+                    form: { ...m.form, endDate: e.target.value },
+                  }))
+                }
+              />
+            </Field>
+            <Field label="Enrolment deadline">
+              <input
+                type="datetime-local"
+                value={cohortModal.form.enrollmentDeadline}
+                onChange={(e) =>
+                  setCohortModal((m) => ({
+                    ...m,
+                    form: { ...m.form, enrollmentDeadline: e.target.value },
+                  }))
+                }
+              />
+            </Field>
+            <Field label="Schedule">
+              <input
+                required
+                maxLength="255"
+                value={cohortModal.form.scheduleDescription}
+                onChange={(e) =>
+                  setCohortModal((m) => ({
+                    ...m,
+                    form: { ...m.form, scheduleDescription: e.target.value },
+                  }))
+                }
+                placeholder="Mon, Wed, Fri · 5–7 PM"
+              />
+            </Field>
+            <Field label="Capacity">
+              <input
+                type="number"
+                min="1"
+                max="500"
+                required
+                value={cohortModal.form.capacity}
+                onChange={(e) =>
+                  setCohortModal((m) => ({
+                    ...m,
+                    form: { ...m.form, capacity: e.target.value },
+                  }))
+                }
+              />
+            </Field>
+            <Field label="Minimum students">
+              <input
+                type="number"
+                min="1"
+                max="500"
+                required
+                value={cohortModal.form.minimumStudents}
+                onChange={(e) =>
+                  setCohortModal((m) => ({
+                    ...m,
+                    form: { ...m.form, minimumStudents: e.target.value },
+                  }))
+                }
+              />
+            </Field>
+            <Field label="Cohort tuition (XAF, optional)">
+              <input
+                type="number"
+                min="0"
+                value={cohortModal.form.priceXaf}
+                onChange={(e) =>
+                  setCohortModal((m) => ({
+                    ...m,
+                    form: { ...m.form, priceXaf: e.target.value },
+                  }))
+                }
+                placeholder="Use program price"
+              />
+            </Field>
+            <Field label="Status">
+              <select
+                value={cohortModal.form.status}
+                onChange={(e) =>
+                  setCohortModal((m) => ({
+                    ...m,
+                    form: { ...m.form, status: e.target.value },
+                  }))
+                }
+              >
+                {["DRAFT", "OPEN", "IN_PROGRESS", "COMPLETED", "CANCELLED"].map(
+                  (s) => (
+                    <option key={s}>{s}</option>
+                  ),
+                )}
+              </select>
+            </Field>
+            <Field label="Timezone">
+              <input
+                required
+                value={cohortModal.form.timezone}
+                onChange={(e) =>
+                  setCohortModal((m) => ({
+                    ...m,
+                    form: { ...m.form, timezone: e.target.value },
+                  }))
+                }
+              />
+            </Field>
+            {error && (
+              <div className="admin-alert wide" role="alert">
+                {error}
+              </div>
+            )}
+            <div className="admin-modal-actions">
+              <button
+                type="button"
+                className="admin-button subtle"
+                onClick={() => setCohortModal(null)}
+              >
+                Cancel
+              </button>
+              <button
+                className="admin-button primary"
+                disabled={saving || !cohortModal.form.instructorId}
+              >
+                {saving ? "Saving…" : "Save cohort"}
+              </button>
+            </div>
+          </form>
+        </Modal>
+      )}
+    </div>
+  );
+}
