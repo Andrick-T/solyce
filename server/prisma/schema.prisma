@@ -1,0 +1,164 @@
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id           Int      @id @default(autoincrement())
+  email        String   @unique @db.VarChar(191)
+  passwordHash String   @db.VarChar(255)
+  fullName     String   @db.VarChar(150)
+  role         UserRole @default(STUDENT)
+  isActive     Boolean  @default(true)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  enrollments       Enrollment[]
+  assignedCohorts   Cohort[]     @relation("CohortInstructor")
+  verifiedPayments  Payment[]    @relation("PaymentVerifier")
+
+  @@index([role, isActive])
+  @@map("users")
+}
+
+model Course {
+  id              Int            @id @default(autoincrement())
+  slug            String         @unique @db.VarChar(191)
+  title           String         @db.VarChar(191)
+  description     String         @db.Text
+  language        CourseLanguage
+  examType        String         @db.VarChar(50)
+  durationWeeks   Int
+  curriculum      String?        @db.Text
+  priceXaf        Int
+  isPublished     Boolean        @default(false)
+  createdAt       DateTime       @default(now())
+  updatedAt       DateTime       @updatedAt
+
+  cohorts Cohort[]
+
+  @@index([isPublished, language])
+  @@index([examType])
+  @@map("courses")
+}
+
+model Cohort {
+  id                 Int          @id @default(autoincrement())
+  name               String       @db.VarChar(150)
+  courseId           Int
+  instructorId       Int?
+  startDate          DateTime     @db.Date
+  endDate            DateTime     @db.Date
+  enrollmentDeadline DateTime?
+  scheduleDescription String      @db.VarChar(255)
+  timezone           String       @default("Africa/Douala") @db.VarChar(50)
+  capacity           Int          @default(8)
+  minimumStudents    Int          @default(6)
+  priceXaf           Int?
+  status             CohortStatus @default(DRAFT)
+  createdAt          DateTime     @default(now())
+  updatedAt          DateTime     @updatedAt
+
+  course      Course       @relation(fields: [courseId], references: [id], onDelete: Restrict)
+  instructor  User?        @relation("CohortInstructor", fields: [instructorId], references: [id], onDelete: SetNull)
+  enrollments Enrollment[]
+
+  @@index([courseId, status])
+  @@index([startDate, status])
+  @@index([instructorId])
+  @@map("cohorts")
+}
+
+model Enrollment {
+  id              Int              @id @default(autoincrement())
+  userId          Int
+  cohortId        Int
+  status          EnrollmentStatus @default(PENDING)
+  agreedPriceXaf  Int
+  enrolledAt      DateTime         @default(now())
+  confirmedAt     DateTime?
+  cancelledAt     DateTime?
+  createdAt       DateTime         @default(now())
+  updatedAt       DateTime         @updatedAt
+
+  user     User      @relation(fields: [userId], references: [id], onDelete: Restrict)
+  cohort   Cohort    @relation(fields: [cohortId], references: [id], onDelete: Restrict)
+  payments Payment[]
+
+  @@unique([userId, cohortId])
+  @@index([cohortId, status])
+  @@index([userId, status])
+  @@map("enrollments")
+}
+
+model Payment {
+  id                    Int           @id @default(autoincrement())
+  enrollmentId          Int
+  expectedAmountXaf     Int
+  receivedAmountXaf     Int           @default(0)
+  method                PaymentMethod
+  status                PaymentStatus @default(PENDING)
+  transactionReference  String?       @db.VarChar(191)
+  verificationNote      String?       @db.Text
+  verifiedById          Int?
+  verifiedAt            DateTime?
+  createdAt             DateTime      @default(now())
+  updatedAt             DateTime      @updatedAt
+
+  enrollment Enrollment @relation(fields: [enrollmentId], references: [id], onDelete: Restrict)
+  verifiedBy User?      @relation("PaymentVerifier", fields: [verifiedById], references: [id], onDelete: SetNull)
+
+  @@index([enrollmentId, status])
+  @@index([status, createdAt])
+  @@index([verifiedById])
+  @@map("payments")
+}
+
+enum UserRole {
+  STUDENT
+  INSTRUCTOR
+  ADMIN
+}
+
+enum CourseLanguage {
+  ENGLISH
+  FRENCH
+}
+
+enum CohortStatus {
+  DRAFT
+  OPEN
+  IN_PROGRESS
+  COMPLETED
+  CANCELLED
+}
+
+enum EnrollmentStatus {
+  PENDING
+  AWAITING_PAYMENT
+  PAYMENT_UNDER_REVIEW
+  CONFIRMED
+  CANCELLED
+  WAITLISTED
+}
+
+enum PaymentMethod {
+  MTN_MOMO
+  ORANGE_MONEY
+  BANK_TRANSFER
+  CASH
+  OTHER
+}
+
+enum PaymentStatus {
+  PENDING
+  UNDER_REVIEW
+  VERIFIED
+  REJECTED
+  REFUNDED
+}
