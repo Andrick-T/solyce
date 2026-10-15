@@ -1,4 +1,5 @@
 ﻿import { useCallback, useEffect, useMemo, useState } from "react";
+import AssessmentGrading from "./AssessmentGrading.jsx";
 import "./AdminApp.css";
 
 const API = (
@@ -319,7 +320,9 @@ export default function AdminApp() {
     if (!user) return;
     setStudentLoading(true);
     try {
-      const result = await request(`/admin/enrollments?status=${encodeURIComponent(studentStatus)}`);
+      const result = await request(
+        `/admin/enrollments?status=${encodeURIComponent(studentStatus)}`,
+      );
       setEnrollments(result.data || []);
     } catch (err) {
       setError(err.message);
@@ -332,7 +335,9 @@ export default function AdminApp() {
     if (!user) return;
     setPaymentLoading(true);
     try {
-      const result = await request(`/admin/payments?status=${encodeURIComponent(paymentStatus)}`);
+      const result = await request(
+        `/admin/payments?status=${encodeURIComponent(paymentStatus)}`,
+      );
       const rows = result.data || [];
       setPayments(rows);
       setPaymentDrafts((current) => {
@@ -379,9 +384,11 @@ export default function AdminApp() {
         body: JSON.stringify({ status }),
       });
       await Promise.all([loadEnrollments(), loadData()]);
-      flash(status === "CONFIRMED"
-        ? "Enrollment confirmed."
-        : `Enrollment status updated to ${status.replaceAll("_", " ").toLowerCase()}.`);
+      flash(
+        status === "CONFIRMED"
+          ? "Enrollment confirmed."
+          : `Enrollment status updated to ${status.replaceAll("_", " ").toLowerCase()}.`,
+      );
     } catch (err) {
       setError(err.message);
     } finally {
@@ -613,6 +620,7 @@ export default function AdminApp() {
     { id: "instructors", label: "Instructors", icon: "students" },
     { id: "students", label: "Students", icon: "students" },
     { id: "payments", label: "Payments", icon: "payments" },
+    { id: "grading", label: "Assessment grading", icon: "courses" },
   ];
   const activeStudents = cohorts.reduce(
     (sum, c) => sum + (c.enrolledCount || 0),
@@ -640,7 +648,6 @@ export default function AdminApp() {
             >
               <Icon name={item.icon} />
               <span>{item.label}</span>
-
             </button>
           ))}
         </nav>
@@ -691,7 +698,9 @@ export default function AdminApp() {
                         ? "Instructor management"
                         : page === "students"
                           ? "Student management"
-                          : "Payments"}
+                          : page === "grading"
+                            ? "Assessment grading"
+                            : "Payments"}
               </h1>
               <p>
                 {page === "overview"
@@ -702,9 +711,11 @@ export default function AdminApp() {
                       ? "Plan live learning groups, assign instructors and manage enrolment windows."
                       : page === "instructors"
                         ? "Create active instructor accounts and review who is available for cohort assignment."
-                        : page === "students"
-                          ? "Review guest bookings, manage enrolment status and track learner cohorts."
-                          : "Record offline payments, verify full tuition and keep enrolment decisions auditable."}
+                        : page === "grading"
+                          ? "Review submitted work, assign grades and publish learner feedback."
+                          : page === "students"
+                            ? "Review guest bookings, manage enrolment status and track learner cohorts."
+                            : "Record offline payments, verify full tuition and keep enrolment decisions auditable."}
               </p>
             </div>
             <div className="admin-heading-actions">
@@ -1251,90 +1262,425 @@ export default function AdminApp() {
               </section>
             </div>
           )}
-{page === "students" && (
+          {page === "students" && (
             <section className="admin-panel admin-table-panel">
               <div className="admin-panel-heading">
                 <div>
                   <p className="admin-eyebrow">LEARNER RECORDS</p>
-                  <h2>Bookings and enrolments <span className="count-pill">{enrollments.length}</span></h2>
+                  <h2>
+                    Bookings and enrolments{" "}
+                    <span className="count-pill">{enrollments.length}</span>
+                  </h2>
                 </div>
                 <div className="admin-heading-actions">
-                  <input className="admin-search" value={studentQuery} onChange={(e) => setStudentQuery(e.target.value)} placeholder="Search name, email or reference…" aria-label="Search learners" />
-                  <select className="admin-search" value={studentStatus} onChange={(e) => setStudentStatus(e.target.value)} aria-label="Filter enrolments">
+                  <input
+                    className="admin-search"
+                    value={studentQuery}
+                    onChange={(e) => setStudentQuery(e.target.value)}
+                    placeholder="Search name, email or reference…"
+                    aria-label="Search learners"
+                  />
+                  <select
+                    className="admin-search"
+                    value={studentStatus}
+                    onChange={(e) => setStudentStatus(e.target.value)}
+                    aria-label="Filter enrolments"
+                  >
                     <option value="ALL">All statuses</option>
-                    {["PENDING", "AWAITING_PAYMENT", "PAYMENT_UNDER_REVIEW", "CONFIRMED", "CANCELLED", "WAITLISTED"].map((s) => <option key={s} value={s}>{s.replaceAll("_", " ")}</option>)}
+                    {[
+                      "PENDING",
+                      "AWAITING_PAYMENT",
+                      "PAYMENT_UNDER_REVIEW",
+                      "CONFIRMED",
+                      "CANCELLED",
+                      "WAITLISTED",
+                    ].map((s) => (
+                      <option key={s} value={s}>
+                        {s.replaceAll("_", " ")}
+                      </option>
+                    ))}
                   </select>
-                  <button className="admin-button subtle" onClick={loadEnrollments} disabled={studentLoading}>↻ Refresh</button>
+                  <button
+                    className="admin-button subtle"
+                    onClick={loadEnrollments}
+                    disabled={studentLoading}
+                  >
+                    ↻ Refresh
+                  </button>
                 </div>
               </div>
-              {studentLoading ? <div className="admin-inline-loading"><span className="admin-spinner" /> Loading enrolments…</div> : (
+              {studentLoading ? (
+                <div className="admin-inline-loading">
+                  <span className="admin-spinner" /> Loading enrolments…
+                </div>
+              ) : (
                 <div className="admin-table-wrap">
                   <table className="admin-table">
-                    <thead><tr><th>Learner</th><th>Program / cohort</th><th>Booking</th><th>Tuition</th><th>Payment</th><th>Enrolment status</th><th>Update status</th></tr></thead>
+                    <thead>
+                      <tr>
+                        <th>Learner</th>
+                        <th>Program / cohort</th>
+                        <th>Booking</th>
+                        <th>Tuition</th>
+                        <th>Payment</th>
+                        <th>Enrolment status</th>
+                        <th>Update status</th>
+                      </tr>
+                    </thead>
                     <tbody>
-                      {enrollments.filter((e) => `${e.student?.fullName || ""} ${e.student?.email || ""} ${e.bookingReference || ""} ${e.cohort?.name || ""} ${e.cohort?.course?.title || ""}`.toLowerCase().includes(studentQuery.toLowerCase())).map((e) => {
-                        const latestPayment = e.payments?.[0];
-                        return <tr key={e.id}>
-                          <td><div className="table-primary">{e.student?.fullName || "Unnamed learner"}</div><div className="table-secondary">{e.student?.email || "No email"}{e.student?.phone ? ` · ${e.student.phone}` : ""}</div></td>
-                          <td><div className="table-primary">{e.cohort?.course?.title || "Program unavailable"}</div><div className="table-secondary">{e.cohort?.name || "Cohort unavailable"} · {date(e.cohort?.startDate)}</div></td>
-                          <td><div className="table-primary">{e.bookingReference || `SOL-${String(e.id).padStart(6, "0")}`}</div><div className="table-secondary">{date(e.createdAt)}</div></td>
-                          <td className="table-money">{money(e.agreedPriceXaf)}</td>
-                          <td><span className={`admin-status status-${(latestPayment?.status || "PENDING").toLowerCase()}`}>{(latestPayment?.status || "NO PAYMENT").replaceAll("_", " ")}</span><div className="table-secondary">{latestPayment ? `${money(latestPayment.receivedAmountXaf)} / ${money(latestPayment.expectedAmountXaf)}` : "No payment record"}</div></td>
-                          <td><span className={`admin-status status-${String(e.status).toLowerCase()}`}>{String(e.status).replaceAll("_", " ")}</span></td>
-                          <td><select className="admin-search" aria-label={`Change status for ${e.student?.fullName || e.id}`} value={e.status} disabled={recordBusy === `enrollment-${e.id}` || e.status === "CANCELLED"} onChange={(ev) => changeEnrollmentStatus(e, ev.target.value)}>
-                            {["PENDING", "AWAITING_PAYMENT", "PAYMENT_UNDER_REVIEW", "CONFIRMED", "CANCELLED", "WAITLISTED"].map((s) => <option key={s} value={s}>{s.replaceAll("_", " ")}</option>)}
-                          </select>{recordBusy === `enrollment-${e.id}` && <div className="table-secondary">Saving…</div>}</td>
-                        </tr>;
-                      })}
+                      {enrollments
+                        .filter((e) =>
+                          `${e.student?.fullName || ""} ${e.student?.email || ""} ${e.bookingReference || ""} ${e.cohort?.name || ""} ${e.cohort?.course?.title || ""}`
+                            .toLowerCase()
+                            .includes(studentQuery.toLowerCase()),
+                        )
+                        .map((e) => {
+                          const latestPayment = e.payments?.[0];
+                          return (
+                            <tr key={e.id}>
+                              <td>
+                                <div className="table-primary">
+                                  {e.student?.fullName || "Unnamed learner"}
+                                </div>
+                                <div className="table-secondary">
+                                  {e.student?.email || "No email"}
+                                  {e.student?.phone
+                                    ? ` · ${e.student.phone}`
+                                    : ""}
+                                </div>
+                              </td>
+                              <td>
+                                <div className="table-primary">
+                                  {e.cohort?.course?.title ||
+                                    "Program unavailable"}
+                                </div>
+                                <div className="table-secondary">
+                                  {e.cohort?.name || "Cohort unavailable"} ·{" "}
+                                  {date(e.cohort?.startDate)}
+                                </div>
+                              </td>
+                              <td>
+                                <div className="table-primary">
+                                  {e.bookingReference ||
+                                    `SOL-${String(e.id).padStart(6, "0")}`}
+                                </div>
+                                <div className="table-secondary">
+                                  {date(e.createdAt)}
+                                </div>
+                              </td>
+                              <td className="table-money">
+                                {money(e.agreedPriceXaf)}
+                              </td>
+                              <td>
+                                <span
+                                  className={`admin-status status-${(latestPayment?.status || "PENDING").toLowerCase()}`}
+                                >
+                                  {(
+                                    latestPayment?.status || "NO PAYMENT"
+                                  ).replaceAll("_", " ")}
+                                </span>
+                                <div className="table-secondary">
+                                  {latestPayment
+                                    ? `${money(latestPayment.receivedAmountXaf)} / ${money(latestPayment.expectedAmountXaf)}`
+                                    : "No payment record"}
+                                </div>
+                              </td>
+                              <td>
+                                <span
+                                  className={`admin-status status-${String(e.status).toLowerCase()}`}
+                                >
+                                  {String(e.status).replaceAll("_", " ")}
+                                </span>
+                              </td>
+                              <td>
+                                <select
+                                  className="admin-search"
+                                  aria-label={`Change status for ${e.student?.fullName || e.id}`}
+                                  value={e.status}
+                                  disabled={
+                                    recordBusy === `enrollment-${e.id}` ||
+                                    e.status === "CANCELLED"
+                                  }
+                                  onChange={(ev) =>
+                                    changeEnrollmentStatus(e, ev.target.value)
+                                  }
+                                >
+                                  {[
+                                    "PENDING",
+                                    "AWAITING_PAYMENT",
+                                    "PAYMENT_UNDER_REVIEW",
+                                    "CONFIRMED",
+                                    "CANCELLED",
+                                    "WAITLISTED",
+                                  ].map((s) => (
+                                    <option key={s} value={s}>
+                                      {s.replaceAll("_", " ")}
+                                    </option>
+                                  ))}
+                                </select>
+                                {recordBusy === `enrollment-${e.id}` && (
+                                  <div className="table-secondary">Saving…</div>
+                                )}
+                              </td>
+                            </tr>
+                          );
+                        })}
                     </tbody>
                   </table>
-                  {!enrollments.length && <div className="admin-empty">No enrolments found for this status.</div>}
-                  {!!enrollments.length && !enrollments.some((e) => `${e.student?.fullName || ""} ${e.student?.email || ""} ${e.bookingReference || ""} ${e.cohort?.name || ""} ${e.cohort?.course?.title || ""}`.toLowerCase().includes(studentQuery.toLowerCase())) && <div className="admin-empty">No enrolments match this search.</div>}
+                  {!enrollments.length && (
+                    <div className="admin-empty">
+                      No enrolments found for this status.
+                    </div>
+                  )}
+                  {!!enrollments.length &&
+                    !enrollments.some((e) =>
+                      `${e.student?.fullName || ""} ${e.student?.email || ""} ${e.bookingReference || ""} ${e.cohort?.name || ""} ${e.cohort?.course?.title || ""}`
+                        .toLowerCase()
+                        .includes(studentQuery.toLowerCase()),
+                    ) && (
+                      <div className="admin-empty">
+                        No enrolments match this search.
+                      </div>
+                    )}
                 </div>
               )}
-              <p className="admin-form-note">Confirmation is protected by the server: a booking cannot be confirmed until a full payment has been verified. Cancelled enrolments cannot be reopened.</p>
+              <p className="admin-form-note">
+                Confirmation is protected by the server: a booking cannot be
+                confirmed until a full payment has been verified. Cancelled
+                enrolments cannot be reopened.
+              </p>
             </section>
           )}
-{page === "payments" && (
+          {page === "payments" && (
             <section className="admin-panel admin-table-panel">
               <div className="admin-panel-heading">
-                <div><p className="admin-eyebrow">OFFLINE PAYMENT OPERATIONS</p><h2>Payment register <span className="count-pill">{payments.length}</span></h2></div>
+                <div>
+                  <p className="admin-eyebrow">OFFLINE PAYMENT OPERATIONS</p>
+                  <h2>
+                    Payment register{" "}
+                    <span className="count-pill">{payments.length}</span>
+                  </h2>
+                </div>
                 <div className="admin-heading-actions">
-                  <select className="admin-search" value={paymentStatus} onChange={(e) => setPaymentStatus(e.target.value)} aria-label="Filter payments">
+                  <select
+                    className="admin-search"
+                    value={paymentStatus}
+                    onChange={(e) => setPaymentStatus(e.target.value)}
+                    aria-label="Filter payments"
+                  >
                     <option value="ALL">All statuses</option>
-                    {["PENDING", "UNDER_REVIEW", "VERIFIED", "REJECTED", "REFUNDED"].map((s) => <option key={s} value={s}>{s.replaceAll("_", " ")}</option>)}
+                    {[
+                      "PENDING",
+                      "UNDER_REVIEW",
+                      "VERIFIED",
+                      "REJECTED",
+                      "REFUNDED",
+                    ].map((s) => (
+                      <option key={s} value={s}>
+                        {s.replaceAll("_", " ")}
+                      </option>
+                    ))}
                   </select>
-                  <button className="admin-button subtle" onClick={loadPayments} disabled={paymentLoading}>↻ Refresh</button>
+                  <button
+                    className="admin-button subtle"
+                    onClick={loadPayments}
+                    disabled={paymentLoading}
+                  >
+                    ↻ Refresh
+                  </button>
                 </div>
               </div>
-              {paymentLoading ? <div className="admin-inline-loading"><span className="admin-spinner" /> Loading payments…</div> : (
+              {paymentLoading ? (
+                <div className="admin-inline-loading">
+                  <span className="admin-spinner" /> Loading payments…
+                </div>
+              ) : (
                 <div className="admin-table-wrap">
                   <table className="admin-table">
-                    <thead><tr><th>Learner / booking</th><th>Program / cohort</th><th>Required</th><th>Received</th><th>Method</th><th>Reference</th><th>Status</th><th>Verification note</th><th>Action</th></tr></thead>
+                    <thead>
+                      <tr>
+                        <th>Learner / booking</th>
+                        <th>Program / cohort</th>
+                        <th>Required</th>
+                        <th>Received</th>
+                        <th>Method</th>
+                        <th>Reference</th>
+                        <th>Status</th>
+                        <th>Verification note</th>
+                        <th>Action</th>
+                      </tr>
+                    </thead>
                     <tbody>
                       {payments.map((p) => {
-                        const d = paymentDrafts[p.id] || { method: p.method || "OTHER", receivedAmountXaf: String(p.receivedAmountXaf ?? 0), status: p.status || "PENDING", transactionReference: p.transactionReference || "", verificationNote: p.verificationNote || "" };
-                        const setDraft = (key, value) => setPaymentDrafts((old) => ({ ...old, [p.id]: { ...d, [key]: value } }));
+                        const d = paymentDrafts[p.id] || {
+                          method: p.method || "OTHER",
+                          receivedAmountXaf: String(p.receivedAmountXaf ?? 0),
+                          status: p.status || "PENDING",
+                          transactionReference: p.transactionReference || "",
+                          verificationNote: p.verificationNote || "",
+                        };
+                        const setDraft = (key, value) =>
+                          setPaymentDrafts((old) => ({
+                            ...old,
+                            [p.id]: { ...d, [key]: value },
+                          }));
                         const busy = recordBusy === `payment-${p.id}`;
                         const refunded = p.status === "REFUNDED";
-                        return <tr key={p.id}>
-                          <td><div className="table-primary">{p.student?.fullName || "Unnamed learner"}</div><div className="table-secondary">{p.student?.email || "No email"} · {p.bookingReference}</div></td>
-                          <td><div className="table-primary">{p.enrollment?.cohort?.course?.title || "Program unavailable"}</div><div className="table-secondary">{p.enrollment?.cohort?.name || "Cohort unavailable"}</div></td>
-                          <td className="table-money">{money(p.expectedAmountXaf)}</td>
-                          <td><input aria-label={`Amount received for payment ${p.id}`} type="number" min="0" step="1" className="admin-search" value={d.receivedAmountXaf} disabled={busy || refunded} onChange={(e) => setDraft("receivedAmountXaf", e.target.value)} /></td>
-                          <td><select aria-label={`Payment method ${p.id}`} className="admin-search" value={d.method} disabled={busy || refunded} onChange={(e) => setDraft("method", e.target.value)}>{[["MTN_MOMO","MTN Mobile Money"],["ORANGE_MONEY","Orange Money"],["BANK_TRANSFER","Bank transfer"],["CASH","Cash"],["OTHER","Other"]].map(([v,label]) => <option key={v} value={v}>{label}</option>)}</select></td>
-                          <td><input aria-label={`Transaction reference ${p.id}`} className="admin-search" maxLength="191" value={d.transactionReference} disabled={busy || refunded} onChange={(e) => setDraft("transactionReference", e.target.value)} placeholder="Optional reference" /></td>
-                          <td><select aria-label={`Payment status ${p.id}`} className="admin-search" value={d.status} disabled={busy || refunded} onChange={(e) => setDraft("status", e.target.value)}>{["PENDING", "UNDER_REVIEW", "VERIFIED", "REJECTED", "REFUNDED"].map((s) => <option key={s} value={s}>{s.replaceAll("_", " ")}</option>)}</select><div className="table-secondary">{p.verifiedAt ? `Verified ${date(p.verifiedAt)}` : ""}</div></td>
-                          <td><textarea aria-label={`Verification note ${p.id}`} rows="2" maxLength="5000" className="admin-search" value={d.verificationNote} disabled={busy || refunded} onChange={(e) => setDraft("verificationNote", e.target.value)} placeholder="Optional audit note" /></td>
-                          <td><button className="admin-button small primary" disabled={busy || refunded || !String(d.receivedAmountXaf).trim() || Number(d.receivedAmountXaf) < 0 || !Number.isInteger(Number(d.receivedAmountXaf))} onClick={() => savePayment(p)}>{busy ? "Saving…" : "Save"}</button>{refunded && <div className="table-secondary">Locked</div>}</td>
-                        </tr>;
+                        return (
+                          <tr key={p.id}>
+                            <td>
+                              <div className="table-primary">
+                                {p.student?.fullName || "Unnamed learner"}
+                              </div>
+                              <div className="table-secondary">
+                                {p.student?.email || "No email"} ·{" "}
+                                {p.bookingReference}
+                              </div>
+                            </td>
+                            <td>
+                              <div className="table-primary">
+                                {p.enrollment?.cohort?.course?.title ||
+                                  "Program unavailable"}
+                              </div>
+                              <div className="table-secondary">
+                                {p.enrollment?.cohort?.name ||
+                                  "Cohort unavailable"}
+                              </div>
+                            </td>
+                            <td className="table-money">
+                              {money(p.expectedAmountXaf)}
+                            </td>
+                            <td>
+                              <input
+                                aria-label={`Amount received for payment ${p.id}`}
+                                type="number"
+                                min="0"
+                                step="1"
+                                className="admin-search"
+                                value={d.receivedAmountXaf}
+                                disabled={busy || refunded}
+                                onChange={(e) =>
+                                  setDraft("receivedAmountXaf", e.target.value)
+                                }
+                              />
+                            </td>
+                            <td>
+                              <select
+                                aria-label={`Payment method ${p.id}`}
+                                className="admin-search"
+                                value={d.method}
+                                disabled={busy || refunded}
+                                onChange={(e) =>
+                                  setDraft("method", e.target.value)
+                                }
+                              >
+                                {[
+                                  ["MTN_MOMO", "MTN Mobile Money"],
+                                  ["ORANGE_MONEY", "Orange Money"],
+                                  ["BANK_TRANSFER", "Bank transfer"],
+                                  ["CASH", "Cash"],
+                                  ["OTHER", "Other"],
+                                ].map(([v, label]) => (
+                                  <option key={v} value={v}>
+                                    {label}
+                                  </option>
+                                ))}
+                              </select>
+                            </td>
+                            <td>
+                              <input
+                                aria-label={`Transaction reference ${p.id}`}
+                                className="admin-search"
+                                maxLength="191"
+                                value={d.transactionReference}
+                                disabled={busy || refunded}
+                                onChange={(e) =>
+                                  setDraft(
+                                    "transactionReference",
+                                    e.target.value,
+                                  )
+                                }
+                                placeholder="Optional reference"
+                              />
+                            </td>
+                            <td>
+                              <select
+                                aria-label={`Payment status ${p.id}`}
+                                className="admin-search"
+                                value={d.status}
+                                disabled={busy || refunded}
+                                onChange={(e) =>
+                                  setDraft("status", e.target.value)
+                                }
+                              >
+                                {[
+                                  "PENDING",
+                                  "UNDER_REVIEW",
+                                  "VERIFIED",
+                                  "REJECTED",
+                                  "REFUNDED",
+                                ].map((s) => (
+                                  <option key={s} value={s}>
+                                    {s.replaceAll("_", " ")}
+                                  </option>
+                                ))}
+                              </select>
+                              <div className="table-secondary">
+                                {p.verifiedAt
+                                  ? `Verified ${date(p.verifiedAt)}`
+                                  : ""}
+                              </div>
+                            </td>
+                            <td>
+                              <textarea
+                                aria-label={`Verification note ${p.id}`}
+                                rows="2"
+                                maxLength="5000"
+                                className="admin-search"
+                                value={d.verificationNote}
+                                disabled={busy || refunded}
+                                onChange={(e) =>
+                                  setDraft("verificationNote", e.target.value)
+                                }
+                                placeholder="Optional audit note"
+                              />
+                            </td>
+                            <td>
+                              <button
+                                className="admin-button small primary"
+                                disabled={
+                                  busy ||
+                                  refunded ||
+                                  !String(d.receivedAmountXaf).trim() ||
+                                  Number(d.receivedAmountXaf) < 0 ||
+                                  !Number.isInteger(Number(d.receivedAmountXaf))
+                                }
+                                onClick={() => savePayment(p)}
+                              >
+                                {busy ? "Saving…" : "Save"}
+                              </button>
+                              {refunded && (
+                                <div className="table-secondary">Locked</div>
+                              )}
+                            </td>
+                          </tr>
+                        );
                       })}
                     </tbody>
                   </table>
-                  {!payments.length && <div className="admin-empty">No payments found for this status.</div>}
+                  {!payments.length && (
+                    <div className="admin-empty">
+                      No payments found for this status.
+                    </div>
+                  )}
                 </div>
               )}
-              <p className="admin-form-note">Only mark a payment VERIFIED after checking the funds were received. The server requires the full tuition amount and automatically confirms the linked enrolment when verification succeeds. Refunded records are locked.</p>
+              <p className="admin-form-note">
+                Only mark a payment VERIFIED after checking the funds were
+                received. The server requires the full tuition amount and
+                automatically confirms the linked enrolment when verification
+                succeeds. Refunded records are locked.
+              </p>
             </section>
           )}
           <footer className="admin-footer">
@@ -1710,4 +2056,3 @@ export default function AdminApp() {
     </div>
   );
 }
-

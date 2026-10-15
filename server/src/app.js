@@ -14,7 +14,12 @@ import adminInstructorsRoutes from "./routes/admin-instructor.routes.js";
 import publicBookingsRoutes from "./routes/public-bookings.routes.js";
 import adminEnrollmentsRoutes from "./routes/admin-enrollments.routes.js";
 import adminPaymentsRoutes from "./routes/admin-payments.routes.js";
+import adminPedagogyRoutes from "./routes/admin-pedagogy.routes.js";
+import adminLearningContentRoutes from "./routes/admin-learning-content.routes.js";
+import adminAssessmentGradingRoutes from "./routes/admin-assessment-grading.routes.js";
+import studentLearningRoutes from "./routes/student-learning.routes.js";
 import studentRoutes from "./routes/student.routes.js";
+import studentAssessmentsRoutes from "./routes/student-assessments.routes.js";
 
 const app = express();
 const port = Number(process.env.PORT ?? 5000);
@@ -73,7 +78,12 @@ app.use("/api/admin/cohorts", adminCohortsRoutes);
 app.use("/api/admin/instructors", adminInstructorsRoutes);
 app.use("/api/admin/enrollments", adminEnrollmentsRoutes);
 app.use("/api/admin/payments", adminPaymentsRoutes);
+app.use("/api/admin/learning-content", adminLearningContentRoutes);
+app.use("/api/admin/pedagogy", adminPedagogyRoutes);
+app.use("/api/student/learning", studentLearningRoutes);
 app.use("/api/student", studentRoutes);
+app.use("/api/student/assessments", studentAssessmentsRoutes);
+app.use("/api/admin/assessment-grading", adminAssessmentGradingRoutes);
 
 app.get("/api/health", async (_req, res) => {
   try {
