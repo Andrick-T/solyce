@@ -684,67 +684,69 @@ export default function AdminApp() {
           </div>
         </header>
         <div className="admin-content">
-          <div className="admin-page-heading">
-            <div>
-              <p className="admin-eyebrow">SOLYCE / MANAGEMENT</p>
-              <h1>
-                {page === "overview"
-                  ? "A clearer view of progress."
-                  : page === "courses"
-                    ? "Programs"
-                    : page === "cohorts"
-                      ? "Cohorts"
-                      : page === "instructors"
-                        ? "Instructor management"
-                        : page === "students"
-                          ? "Student management"
-                          : page === "grading"
-                            ? "Assessment grading"
-                            : "Payments"}
-              </h1>
-              <p>
-                {page === "overview"
-                  ? "Your learning programs, upcoming intakes and operations at a glance."
-                  : page === "courses"
-                    ? "Create, refine and publish the programs learners can discover."
-                    : page === "cohorts"
-                      ? "Plan live learning groups, assign instructors and manage enrolment windows."
-                      : page === "instructors"
-                        ? "Create active instructor accounts and review who is available for cohort assignment."
-                        : page === "grading"
-                          ? "Review submitted work, assign grades and publish learner feedback."
+          {page !== "grading" && (
+            <div className="admin-page-heading">
+              <div>
+                <p className="admin-eyebrow">SOLYCE / MANAGEMENT</p>
+                <h1>
+                  {page === "overview"
+                    ? "A clearer view of progress."
+                    : page === "courses"
+                      ? "Programs"
+                      : page === "cohorts"
+                        ? "Cohorts"
+                        : page === "instructors"
+                          ? "Instructor management"
                           : page === "students"
-                            ? "Review guest bookings, manage enrolment status and track learner cohorts."
-                            : "Record offline payments, verify full tuition and keep enrolment decisions auditable."}
-              </p>
-            </div>
-            <div className="admin-heading-actions">
-              <button
-                className="admin-button subtle"
-                onClick={loadData}
-                disabled={loading}
-              >
-                ↻ Refresh
-              </button>
-              {page === "courses" && (
+                            ? "Student management"
+                            : page === "grading"
+                              ? "Assessment grading"
+                              : "Payments"}
+                </h1>
+                <p>
+                  {page === "overview"
+                    ? "Your learning programs, upcoming intakes and operations at a glance."
+                    : page === "courses"
+                      ? "Create, refine and publish the programs learners can discover."
+                      : page === "cohorts"
+                        ? "Plan live learning groups, assign instructors and manage enrolment windows."
+                        : page === "instructors"
+                          ? "Create active instructor accounts and review who is available for cohort assignment."
+                          : page === "grading"
+                            ? "Review submitted work, assign grades and publish learner feedback."
+                            : page === "students"
+                              ? "Review guest bookings, manage enrolment status and track learner cohorts."
+                              : "Record offline payments, verify full tuition and keep enrolment decisions auditable."}
+                </p>
+              </div>
+              <div className="admin-heading-actions">
                 <button
-                  className="admin-button primary"
-                  onClick={() => openCourse(null)}
+                  className="admin-button subtle"
+                  onClick={loadData}
+                  disabled={loading}
                 >
-                  ＋ New program
+                  ↻ Refresh
                 </button>
-              )}
-              {page === "cohorts" && (
-                <button
-                  className="admin-button primary"
-                  onClick={() => openCohort(null)}
-                  disabled={!courses.length}
-                >
-                  ＋ New cohort
-                </button>
-              )}
+                {page === "courses" && (
+                  <button
+                    className="admin-button primary"
+                    onClick={() => openCourse(null)}
+                  >
+                    ＋ New program
+                  </button>
+                )}
+                {page === "cohorts" && (
+                  <button
+                    className="admin-button primary"
+                    onClick={() => openCohort(null)}
+                    disabled={!courses.length}
+                  >
+                    ＋ New cohort
+                  </button>
+                )}
+              </div>
             </div>
-          </div>
+          )}
           {error && (
             <div className="admin-alert global-alert" role="alert">
               <span>{error}</span>

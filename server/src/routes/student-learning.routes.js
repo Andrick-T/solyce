@@ -32,7 +32,8 @@ function safeAssessment(assessment) {
   return {
     ...assessment,
     questions: assessment.questions.map((question) => {
-      const { correctAnswer, ...safeQuestion } = question;
+      const { correctAnswer, explanation, ...safeQuestion } = question;
+
       return safeQuestion;
     }),
   };
