@@ -1,5 +1,6 @@
 ﻿import { useCallback, useEffect, useMemo, useState } from "react";
 import AssessmentGrading from "./AssessmentGrading.jsx";
+import LearningStudio from "./LearningStudio.jsx";
 import "./AdminApp.css";
 
 const API = (
@@ -621,6 +622,7 @@ export default function AdminApp() {
     { id: "students", label: "Students", icon: "students" },
     { id: "payments", label: "Payments", icon: "payments" },
     { id: "grading", label: "Assessment grading", icon: "courses" },
+    { id: "learning", label: "Learning Studio", icon: "courses" },
   ];
   const activeStudents = cohorts.reduce(
     (sum, c) => sum + (c.enrolledCount || 0),
@@ -684,7 +686,7 @@ export default function AdminApp() {
           </div>
         </header>
         <div className="admin-content">
-          {page !== "grading" && (
+          {page !== "grading" && page !== "learning" && (
             <div className="admin-page-heading">
               <div>
                 <p className="admin-eyebrow">SOLYCE / MANAGEMENT</p>
@@ -1454,7 +1456,7 @@ export default function AdminApp() {
             </section>
           )}
           {page === "grading" && <AssessmentGrading />}
-
+          {page === "learning" && <LearningStudio />}
           {page === "payments" && (
             <section className="admin-panel admin-table-panel">
               <div className="admin-panel-heading">
