@@ -358,11 +358,15 @@ export default function AdminApp() {
   }, [user, paymentStatus]);
 
   useEffect(() => {
-    if (page === "students") loadEnrollments();
+    if (page !== "students") return;
+    const timer = window.setTimeout(() => loadEnrollments(), 0);
+    return () => window.clearTimeout(timer);
   }, [page, loadEnrollments]);
 
   useEffect(() => {
-    if (page === "payments") loadPayments();
+    if (page !== "payments") return;
+    const timer = window.setTimeout(() => loadPayments(), 0);
+    return () => window.clearTimeout(timer);
   }, [page, loadPayments]);
 
   async function changeEnrollmentStatus(enrollment, status) {

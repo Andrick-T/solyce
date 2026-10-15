@@ -18,9 +18,10 @@ model User {
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
 
-  enrollments       Enrollment[]
-  assignedCohorts   Cohort[]     @relation("CohortInstructor")
-  verifiedPayments  Payment[]    @relation("PaymentVerifier")
+  enrollments          Enrollment[]
+  assignedCohorts      Cohort[]             @relation("CohortInstructor")
+  verifiedPayments     Payment[]            @relation("PaymentVerifier")
+  gradedAttempts       AssessmentAttempt[]  @relation("AssessmentGrader")
 
   @@index([role, isActive])
   @@map("users")
@@ -41,6 +42,7 @@ model Course {
   updatedAt       DateTime       @updatedAt
 
   cohorts Cohort[]
+  modules CourseModule[]
 
   @@index([isPublished, language])
   @@index([examType])
@@ -48,32 +50,32 @@ model Course {
 }
 
 model Cohort {
-  id                 Int          @id @default(autoincrement())
-  name               String       @db.VarChar(150)
-  courseId           Int
-  instructorId       Int?
-  startDate          DateTime     @db.Date
-  endDate            DateTime     @db.Date
-  enrollmentDeadline DateTime?
-  scheduleDescription String      @db.VarChar(255)
-  timezone           String       @default("Africa/Douala") @db.VarChar(50)
-  capacity           Int          @default(8)
-  minimumStudents    Int          @default(6)
-  priceXaf           Int?
-  status             CohortStatus @default(DRAFT)
-  createdAt          DateTime     @default(now())
-  updatedAt          DateTime     @updatedAt
+  id                  Int          @id @default(autoincrement())
+  name                String       @db.VarChar(150)
+  courseId            Int
+  instructorId        Int?
+  startDate           DateTime     @db.Date
+  endDate             DateTime     @db.Date
+  enrollmentDeadline  DateTime?
+  scheduleDescription String       @db.VarChar(255)
+  timezone            String       @default("Africa/Douala") @db.VarChar(50)
+  capacity             Int          @default(8)
+  minimumStudents      Int          @default(6)
+  priceXaf             Int?
+  status               CohortStatus @default(DRAFT)
+  createdAt            DateTime     @default(now())
+  updatedAt            DateTime     @updatedAt
 
-  course      Course       @relation(fields: [courseId], references: [id], onDelete: Restrict)
-  instructor  User?        @relation("CohortInstructor", fields: [instructorId], references: [id], onDelete: SetNull)
-  enrollments Enrollment[]
+  course        Course         @relation(fields: [courseId], references: [id], onDelete: Restrict)
+  instructor    User?          @relation("CohortInstructor", fields: [instructorId], references: [id], onDelete: SetNull)
+  enrollments   Enrollment[]
+  scheduledLessons CohortLesson[]
 
   @@index([courseId, status])
   @@index([startDate, status])
   @@index([instructorId])
   @@map("cohorts")
 }
-
 
 model Enrollment {
   id             Int              @id @default(autoincrement())
@@ -90,9 +92,11 @@ model Enrollment {
   createdAt      DateTime         @default(now())
   updatedAt      DateTime         @updatedAt
 
-  user     User?     @relation(fields: [userId], references: [id], onDelete: Restrict)
-  cohort   Cohort    @relation(fields: [cohortId], references: [id], onDelete: Restrict)
-  payments Payment[]
+  user               User?               @relation(fields: [userId], references: [id], onDelete: Restrict)
+  cohort             Cohort              @relation(fields: [cohortId], references: [id], onDelete: Restrict)
+  payments           Payment[]
+  lessonProgress     LessonProgress[]
+  assessmentAttempts AssessmentAttempt[]
 
   @@unique([userId, cohortId])
   @@index([cohortId, status])
@@ -101,20 +105,19 @@ model Enrollment {
   @@map("enrollments")
 }
 
-
 model Payment {
-  id                    Int           @id @default(autoincrement())
-  enrollmentId          Int
-  expectedAmountXaf     Int
-  receivedAmountXaf     Int           @default(0)
-  method                PaymentMethod
-  status                PaymentStatus @default(PENDING)
-  transactionReference  String?       @db.VarChar(191)
-  verificationNote      String?       @db.Text
-  verifiedById          Int?
-  verifiedAt            DateTime?
-  createdAt             DateTime      @default(now())
-  updatedAt             DateTime      @updatedAt
+  id                   Int           @id @default(autoincrement())
+  enrollmentId         Int
+  expectedAmountXaf    Int
+  receivedAmountXaf    Int           @default(0)
+  method               PaymentMethod
+  status               PaymentStatus @default(PENDING)
+  transactionReference String?       @db.VarChar(191)
+  verificationNote     String?       @db.Text
+  verifiedById         Int?
+  verifiedAt           DateTime?
+  createdAt            DateTime      @default(now())
+  updatedAt            DateTime      @updatedAt
 
   enrollment Enrollment @relation(fields: [enrollmentId], references: [id], onDelete: Restrict)
   verifiedBy User?      @relation("PaymentVerifier", fields: [verifiedById], references: [id], onDelete: SetNull)
@@ -123,6 +126,179 @@ model Payment {
   @@index([status, createdAt])
   @@index([verifiedById])
   @@map("payments")
+}
+
+model CourseModule {
+  id          Int      @id @default(autoincrement())
+  courseId    Int
+  title       String   @db.VarChar(191)
+  description String?  @db.Text
+  position    Int
+  isPublished Boolean  @default(false)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  course  Course   @relation(fields: [courseId], references: [id], onDelete: Restrict)
+  lessons Lesson[]
+
+  @@unique([courseId, position])
+  @@index([courseId, isPublished])
+  @@map("course_modules")
+}
+
+model Lesson {
+  id                 Int      @id @default(autoincrement())
+  moduleId           Int
+  title              String   @db.VarChar(191)
+  description        String?  @db.Text
+  objectives         String?  @db.Text
+  preparationContent String?  @db.Text
+  content            String?  @db.Text
+  estimatedMinutes   Int?
+  position           Int
+  isPublished        Boolean  @default(false)
+  createdAt          DateTime @default(now())
+  updatedAt          DateTime @updatedAt
+
+  module       CourseModule     @relation(fields: [moduleId], references: [id], onDelete: Restrict)
+  resources    LearningResource[]
+  assessments  Assessment[]
+  scheduledFor CohortLesson[]
+
+  @@unique([moduleId, position])
+  @@index([moduleId, isPublished])
+  @@map("lessons")
+}
+
+model LearningResource {
+  id          Int                 @id @default(autoincrement())
+  lessonId    Int
+  title       String              @db.VarChar(191)
+  description String?             @db.Text
+  resourceType LearningResourceType
+  url         String              @db.VarChar(2048)
+  releasePhase LearningReleasePhase @default(AFTER_SESSION)
+  position    Int                 @default(0)
+  isPublished Boolean             @default(false)
+  createdAt   DateTime            @default(now())
+  updatedAt   DateTime            @updatedAt
+
+  lesson Lesson @relation(fields: [lessonId], references: [id], onDelete: Restrict)
+
+  @@index([lessonId, releasePhase, isPublished])
+  @@map("learning_resources")
+}
+
+model Assessment {
+  id             Int                   @id @default(autoincrement())
+  lessonId       Int
+  title          String                @db.VarChar(191)
+  description    String?               @db.Text
+  assessmentType AssessmentType
+  releasePhase   LearningReleasePhase  @default(AFTER_SESSION)
+  instructions   String?               @db.Text
+  maxScore       Int?
+  passingScore   Int?
+  timeLimitMinutes Int?
+  dueAt          DateTime?
+  isPublished    Boolean               @default(false)
+  createdAt      DateTime              @default(now())
+  updatedAt      DateTime              @updatedAt
+
+  lesson    Lesson                @relation(fields: [lessonId], references: [id], onDelete: Restrict)
+  questions AssessmentQuestion[]
+  attempts  AssessmentAttempt[]
+
+  @@index([lessonId, releasePhase, isPublished])
+  @@map("assessments")
+}
+
+model AssessmentQuestion {
+  id            Int              @id @default(autoincrement())
+  assessmentId  Int
+  questionType  AssessmentQuestionType
+  prompt        String           @db.Text
+  options       Json?
+  correctAnswer Json?
+  explanation   String?          @db.Text
+  points        Int              @default(1)
+  position      Int
+  createdAt     DateTime         @default(now())
+  updatedAt     DateTime         @updatedAt
+
+  assessment Assessment @relation(fields: [assessmentId], references: [id], onDelete: Restrict)
+
+  @@unique([assessmentId, position])
+  @@index([assessmentId])
+  @@map("assessment_questions")
+}
+
+model CohortLesson {
+  id                     Int                 @id @default(autoincrement())
+  cohortId               Int
+  lessonId               Int
+  scheduledAt             DateTime
+  scheduledEndAt          DateTime
+  preparationLeadMinutes Int                 @default(30)
+  status                  CohortLessonStatus  @default(SCHEDULED)
+  instructorNotes         String?             @db.Text
+  createdAt               DateTime            @default(now())
+  updatedAt               DateTime            @updatedAt
+
+  cohort   Cohort           @relation(fields: [cohortId], references: [id], onDelete: Restrict)
+  lesson   Lesson           @relation(fields: [lessonId], references: [id], onDelete: Restrict)
+  progress LessonProgress[]
+
+  @@index([cohortId, scheduledAt, status])
+  @@index([lessonId, scheduledAt])
+  @@map("cohort_lessons")
+}
+
+model LessonProgress {
+  id               Int                  @id @default(autoincrement())
+  enrollmentId     Int
+  cohortLessonId   Int
+  status           LessonProgressStatus @default(NOT_STARTED)
+  startedAt        DateTime?
+  completedAt      DateTime?
+  lastAccessedAt   DateTime?
+  createdAt        DateTime             @default(now())
+  updatedAt        DateTime             @updatedAt
+
+  enrollment   Enrollment   @relation(fields: [enrollmentId], references: [id], onDelete: Restrict)
+  cohortLesson CohortLesson @relation(fields: [cohortLessonId], references: [id], onDelete: Restrict)
+
+  @@unique([enrollmentId, cohortLessonId])
+  @@index([cohortLessonId, status])
+  @@index([enrollmentId, status])
+  @@map("lesson_progress")
+}
+
+model AssessmentAttempt {
+  id            Int                   @id @default(autoincrement())
+  enrollmentId  Int
+  assessmentId  Int
+  attemptNumber Int                   @default(1)
+  answers       Json?
+  score         Decimal?              @db.Decimal(8, 2)
+  feedback      String?               @db.Text
+  status        AssessmentAttemptStatus @default(IN_PROGRESS)
+  startedAt     DateTime              @default(now())
+  submittedAt   DateTime?
+  gradedAt      DateTime?
+  gradedById    Int?
+  createdAt     DateTime              @default(now())
+  updatedAt     DateTime              @updatedAt
+
+  enrollment Enrollment @relation(fields: [enrollmentId], references: [id], onDelete: Restrict)
+  assessment Assessment @relation(fields: [assessmentId], references: [id], onDelete: Restrict)
+  gradedBy   User?      @relation("AssessmentGrader", fields: [gradedById], references: [id], onDelete: SetNull)
+
+  @@unique([enrollmentId, assessmentId, attemptNumber])
+  @@index([enrollmentId, status])
+  @@index([assessmentId, status])
+  @@index([gradedById])
+  @@map("assessment_attempts")
 }
 
 enum UserRole {
@@ -167,4 +343,52 @@ enum PaymentStatus {
   VERIFIED
   REJECTED
   REFUNDED
+}
+
+enum LearningResourceType {
+  PDF
+  DOCUMENT
+  VIDEO
+  AUDIO
+  LINK
+  IMAGE
+  OTHER
+}
+
+enum LearningReleasePhase {
+  PREPARATION
+  AFTER_SESSION
+}
+
+enum AssessmentType {
+  HOMEWORK
+  QUIZ
+  PRACTICE
+  MOCK_EXAM
+}
+
+enum AssessmentQuestionType {
+  SINGLE_CHOICE
+  MULTIPLE_CHOICE
+  TRUE_FALSE
+  SHORT_ANSWER
+  LONG_ANSWER
+}
+
+enum CohortLessonStatus {
+  SCHEDULED
+  RESCHEDULED
+  CANCELLED
+}
+
+enum LessonProgressStatus {
+  NOT_STARTED
+  IN_PROGRESS
+  COMPLETED
+}
+
+enum AssessmentAttemptStatus {
+  IN_PROGRESS
+  SUBMITTED
+  GRADED
 }
