@@ -1,4 +1,4 @@
-﻿import "./config/env.js";
+import "./config/env.js";
 
 import express from "express";
 import cors from "cors";
@@ -14,6 +14,7 @@ import adminInstructorsRoutes from "./routes/admin-instructor.routes.js";
 import publicBookingsRoutes from "./routes/public-bookings.routes.js";
 import adminEnrollmentsRoutes from "./routes/admin-enrollments.routes.js";
 import adminPaymentsRoutes from "./routes/admin-payments.routes.js";
+import studentRoutes from "./routes/student.routes.js";
 
 const app = express();
 const port = Number(process.env.PORT ?? 5000);
@@ -72,6 +73,7 @@ app.use("/api/admin/cohorts", adminCohortsRoutes);
 app.use("/api/admin/instructors", adminInstructorsRoutes);
 app.use("/api/admin/enrollments", adminEnrollmentsRoutes);
 app.use("/api/admin/payments", adminPaymentsRoutes);
+app.use("/api/student", studentRoutes);
 
 app.get("/api/health", async (_req, res) => {
   try {

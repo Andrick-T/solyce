@@ -3,3 +3,170 @@
 @media(max-width:1100px){.student-sidebar{width:225px}.student-main{margin-left:225px}.student-content{padding-inline:25px}.student-topbar{padding-inline:25px}.student-welcome>div:first-child{padding-left:27px}.student-welcome h1{font-size:38px}.student-stat-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.student-dashboard-grid,.student-bottom-grid{grid-template-columns:1fr 1fr}}
 @media(max-width:760px){.student-sidebar{z-index:50;width:270px;transform:translateX(-100%);transition:transform .22s ease;box-shadow:none}.student-sidebar.is-open{transform:translateX(0);box-shadow:20px 0 70px #101b1620}.student-mobile-close{display:block}.student-nav-backdrop{position:fixed;z-index:40;inset:0;display:block;border:0;background:#111b1680}.student-main{margin-left:0}.student-topbar{height:60px;padding-inline:17px}.student-menu-toggle{display:block;padding:4px 7px;font-size:19px}.student-breadcrumb{flex:1;font-size:9px}.student-top-actions{gap:10px}.student-date-label{display:none}.student-content{padding:20px 15px 25px}.student-welcome{grid-template-columns:1fr}.student-welcome>div:first-child{padding:27px 23px 22px}.student-welcome h1{font-size:39px}.student-welcome-copy{max-width:430px}.student-welcome-art{min-height:210px}.student-art-core{width:93px;font-size:65px}.student-art-ring{width:210px}.student-stat-grid{gap:8px;margin-top:10px}.student-stat-card{padding:13px}.student-stat-top{font-size:6px;letter-spacing:.04em}.student-stat-icon{width:22px;height:22px}.student-stat-card>strong{margin-top:12px;font-size:25px}.student-dashboard-grid,.student-bottom-grid{grid-template-columns:1fr;gap:10px;margin-top:10px}.student-program-panel,.student-agenda-panel{min-height:235px;padding:17px}.student-empty{min-height:145px}.student-tip-card{min-height:150px;padding:18px 15px}.student-tip-card h2{font-size:14px}.student-quick-panel{padding:16px}.student-footer{align-items:flex-start;flex-wrap:wrap;padding:15px;font-size:7px}.student-subpage{padding-top:34px}.student-page-heading{padding-bottom:23px}.student-page-heading h1{font-size:36px}.student-subpage-panel{padding:12px}.student-profile-notice{align-items:flex-start;padding:18px}.student-profile-notice h2{font-size:15px}}
 @media(max-width:360px){.student-welcome h1{font-size:34px}.student-stat-card{padding:10px}.student-stat-top{align-items:flex-start}.student-stat-icon{display:none}.student-welcome-actions{gap:12px}.student-primary-button{gap:10px;padding-inline:10px}}
+
+/* Student authentication */
+.student-auth-screen {
+  --st-ink: #1c2923;
+  --st-muted: #7b8177;
+  --st-paper: #f7f7f1;
+  --st-line: #e7e8df;
+  --st-green: #d8ed91;
+  display: grid;
+  min-height: 100vh;
+  place-items: center;
+  padding: 28px 18px;
+  background:
+    radial-gradient(ellipse at 10% 10%, #e9eedb 0, transparent 42%),
+    var(--st-paper);
+  color: var(--st-ink);
+  font-family: var(--sans, Arial, sans-serif);
+}
+
+.student-auth-card {
+  width: min(100%, 460px);
+  padding: clamp(25px, 6vw, 48px);
+  border: 1px solid var(--st-line);
+  background: #fff;
+  box-shadow: 0 24px 80px #1c29230d;
+}
+
+.student-auth-card > .student-brand {
+  margin-bottom: 42px;
+  text-decoration: none;
+}
+
+.student-auth-card > .student-eyebrow {
+  margin-bottom: 13px;
+  color: #718052;
+}
+
+.student-auth-card > h1 {
+  margin: 0;
+  font-family: var(--heading, Georgia, serif);
+  font-size: clamp(35px, 7vw, 48px);
+  font-weight: 500;
+  letter-spacing: -0.055em;
+  line-height: 1.1;
+}
+
+.student-auth-intro {
+  margin: 13px 0 27px;
+  color: var(--st-muted);
+  font-size: 14px;
+  line-height: 1.8;
+}
+
+.student-auth-form {
+  display: grid;
+  gap: 19px;
+}
+
+.student-auth-form label {
+  display: grid;
+  gap: 8px;
+  color: #424b40;
+  font-size: 12px;
+  font-weight: 650;
+}
+
+.student-auth-form input {
+  box-sizing: border-box;
+  width: 100%;
+  min-height: 46px;
+  padding: 11px 13px;
+  border: 1px solid #dfe3d8;
+  border-radius: 2px;
+  outline: none;
+  background: #fff;
+  color: var(--st-ink);
+  font: inherit;
+  font-size: 14px;
+  transition: border-color 150ms, box-shadow 150ms;
+}
+
+.student-auth-form input:focus {
+  border-color: #899e60;
+  box-shadow: 0 0 0 3px #d8ed9140;
+}
+
+.student-auth-form small {
+  color: var(--st-muted);
+  font-size: 11px;
+  font-weight: 400;
+}
+
+.student-auth-form .student-primary-button {
+  width: 100%;
+  min-height: 48px;
+  justify-content: space-between;
+  margin-top: 5px;
+  padding: 0 17px;
+  font-size: 13px;
+}
+
+.student-auth-form .student-primary-button:disabled {
+  cursor: wait;
+  opacity: 0.65;
+}
+
+.student-auth-switch {
+  margin: 24px 0 0;
+  color: var(--st-muted);
+  font-size: 12px;
+  text-align: center;
+}
+
+.student-auth-switch button {
+  padding: 3px;
+  border: 0;
+  background: transparent;
+  color: #536a39;
+  font: inherit;
+  font-weight: 700;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+.student-alert {
+  margin: 0 0 20px;
+  padding: 12px 14px;
+  border: 1px solid #e7c9c2;
+  background: #fff6f3;
+  color: #8c382b;
+  font-size: 12px;
+  line-height: 1.7;
+  overflow-wrap: anywhere;
+}
+
+.student-back-link {
+  display: inline-block;
+  margin-top: 27px;
+  color: #737c6d;
+  font-size: 11px;
+  text-decoration: none;
+}
+
+.student-back-link:hover {
+  color: var(--st-ink);
+  text-decoration: underline;
+}
+
+.student-auth-card button:focus-visible,
+.student-back-link:focus-visible {
+  outline: 3px solid #91ab5b;
+  outline-offset: 3px;
+}
+
+@media (max-width: 480px) {
+  .student-auth-screen {
+    padding: 14px;
+  }
+
+  .student-auth-card {
+    padding: 27px 22px;
+  }
+
+  .student-auth-card > .student-brand {
+    margin-bottom: 34px;
+  }
+}
