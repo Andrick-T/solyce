@@ -125,6 +125,24 @@ function safeAttempt(attempt) {
   };
 }
 
+function isAttemptExpired(attempt, now = new Date()) {
+  const timeLimitMinutes = attempt.assessment?.timeLimitMinutes;
+
+  // No time limit configured: the attempt does not expire by duration.
+  if (
+    timeLimitMinutes === null ||
+    timeLimitMinutes === undefined ||
+    timeLimitMinutes <= 0
+  ) {
+    return false;
+  }
+
+  const deadline =
+    new Date(attempt.startedAt).getTime() + timeLimitMinutes * 60_000;
+
+  return now.getTime() >= deadline;
+}
+
 const answerSchema = z
   .record(z.string(), z.unknown())
   .refine((answers) => Object.keys(answers).length <= 200, "Too many answers.");
@@ -345,6 +363,15 @@ router.patch(
           409,
           "ATTEMPT_CLOSED",
           "This attempt can no longer be modified.",
+        );
+      }
+
+      if (isAttemptExpired(attempt)) {
+        return fail(
+          res,
+          409,
+          "ATTEMPT_TIME_EXPIRED",
+          "The time limit has expired. Submit your saved answers to finish.",
         );
       }
 

@@ -33,6 +33,23 @@ function formatDate(value) {
         timeStyle: "short",
       }).format(date);
 }
+function getAttemptDeadline(attempt, assessment) {
+  const minutes = assessment?.timeLimitMinutes;
+
+  if (!minutes || minutes <= 0 || !attempt?.startedAt) {
+    return null;
+  }
+
+  return new Date(attempt.startedAt).getTime() + minutes * 60_000;
+}
+
+function formatRemainingTime(milliseconds) {
+  const totalSeconds = Math.max(0, Math.ceil(milliseconds / 1000));
+  const minutes = Math.floor(totalSeconds / 60);
+  const seconds = totalSeconds % 60;
+
+  return `${String(minutes).padStart(2, "0")}:${String(seconds).padStart(2, "0")}`;
+}
 
 function label(value) {
   return String(value || "")
@@ -155,6 +172,19 @@ export default function StudentAssessments() {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
   const [notice, setNotice] = useState("");
+  const [clockNow, setClockNow] = useState(Date.now());
+
+  useEffect(() => {
+    if (!active) return undefined;
+
+    setClockNow(Date.now());
+
+    const intervalId = window.setInterval(() => {
+      setClockNow(Date.now());
+    }, 1000);
+
+    return () => window.clearInterval(intervalId);
+  }, [active?.attempt?.id, active?.attempt?.startedAt]);
 
   const loadLearning = useCallback(async () => {
     setLoading(true);
@@ -332,6 +362,9 @@ export default function StudentAssessments() {
 
   if (active) {
     const isOpen = active.attempt.status === "IN_PROGRESS";
+    const deadline = getAttemptDeadline(active.attempt, active.assessment);
+    const isExpired = deadline !== null && clockNow >= deadline;
+    const canEdit = isOpen && !isExpired;
 
     return (
       <section className="student-assessment-page">
@@ -363,6 +396,23 @@ export default function StudentAssessments() {
             Attempt {active.attempt.attemptNumber} ·{" "}
             {label(active.attempt.status)}
           </p>
+
+          {deadline !== null && isOpen && (
+            <div
+              className={`student-assessment-timer${isExpired ? " is-expired" : ""}`}
+              role="timer"
+              aria-live="off"
+            >
+              <span>{isExpired ? "Time expired" : "Time remaining"}</span>
+              <strong>{formatRemainingTime(deadline - clockNow)}</strong>
+              {isExpired && (
+                <p>
+                  Your answers can no longer be changed. Submit your saved
+                  answers to finish this attempt.
+                </p>
+              )}
+            </div>
+          )}
 
           {active.questions.map((question, index) => (
             <article className="student-assessment-question" key={question.id}>
