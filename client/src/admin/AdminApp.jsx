@@ -1451,6 +1451,8 @@ export default function AdminApp() {
               </p>
             </section>
           )}
+          {page === "grading" && <AssessmentGrading />}
+
           {page === "payments" && (
             <section className="admin-panel admin-table-panel">
               <div className="admin-panel-heading">
