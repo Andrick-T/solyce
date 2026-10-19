@@ -1894,7 +1894,6 @@ export default function AdminApp() {
             </Field>
             <Field label="Assigned instructor">
               <select
-                required
                 value={cohortModal.form.instructorId}
                 onChange={(e) =>
                   setCohortModal((m) => ({
@@ -2049,10 +2048,7 @@ export default function AdminApp() {
               >
                 Cancel
               </button>
-              <button
-                className="admin-button primary"
-                disabled={saving || !cohortModal.form.instructorId}
-              >
+              <button className="admin-button primary" disabled={saving}>
                 {saving ? "Saving…" : "Save cohort"}
               </button>
             </div>

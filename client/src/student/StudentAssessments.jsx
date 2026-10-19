@@ -15,7 +15,13 @@ async function request(path, options = {}) {
   const body = await response.json().catch(() => ({}));
 
   if (!response.ok) {
-    throw new Error(body?.error?.message || "Unable to complete this action.");
+    const error = new Error(
+      body?.error?.message || "Unable to complete this action.",
+    );
+
+    error.code = body?.error?.code;
+    error.status = response.status;
+    throw error;
   }
 
   return body?.data;
@@ -33,14 +39,20 @@ function formatDate(value) {
         timeStyle: "short",
       }).format(date);
 }
-function getAttemptDeadline(attempt, assessment) {
-  const minutes = assessment?.timeLimitMinutes;
 
-  if (!minutes || minutes <= 0 || !attempt?.startedAt) {
+function getAttemptDeadline(attempt, assessment) {
+  const minutes = Number(assessment?.timeLimitMinutes);
+  const startedAt = new Date(attempt?.startedAt).getTime();
+
+  if (
+    !Number.isFinite(minutes) ||
+    minutes <= 0 ||
+    !Number.isFinite(startedAt)
+  ) {
     return null;
   }
 
-  return new Date(attempt.startedAt).getTime() + minutes * 60_000;
+  return startedAt + minutes * 60_000;
 }
 
 function formatRemainingTime(milliseconds) {
@@ -55,7 +67,7 @@ function label(value) {
   return String(value || "")
     .replaceAll("_", " ")
     .toLowerCase()
-    .replace(/^\w/, (character) => character.toUpperCase());
+    .replace(/^\\w/, (character) => character.toUpperCase());
 }
 
 function optionsFor(question) {
@@ -191,8 +203,9 @@ export default function StudentAssessments() {
     setError("");
 
     try {
-      const response = await request("/api/student/learning");
-      setSessions(Array.isArray(response?.data) ? response.data : []);
+      // request() already returns body.data, which is the sessions array.
+      const data = await request("/api/student/learning");
+      setSessions(Array.isArray(data) ? data : []);
     } catch (err) {
       setError(err.message);
     } finally {
@@ -225,19 +238,28 @@ export default function StudentAssessments() {
     try {
       const response = await request(
         `/api/student/assessments/assessments/${assessment.id}/attempts`,
-        { method: "POST", body: JSON.stringify({}) },
+        {
+          method: "POST",
+          body: JSON.stringify({}),
+        },
       );
 
       const attempt = response?.attempt;
-      if (!attempt) throw new Error("The server did not return an attempt.");
+
+      if (!attempt) {
+        throw new Error("The server did not return an attempt.");
+      }
 
       setActive({
         assessment,
         attempt,
         questions: response.questions || [],
       });
+
       setAnswers(
-        attempt.answers && typeof attempt.answers === "object"
+        attempt.answers &&
+          typeof attempt.answers === "object" &&
+          !Array.isArray(attempt.answers)
           ? attempt.answers
           : {},
       );
@@ -272,10 +294,14 @@ export default function StudentAssessments() {
       );
 
       if (response?.attempt) {
-        setActive((current) => ({
-          ...current,
-          attempt: response.attempt,
-        }));
+        setActive((current) =>
+          current
+            ? {
+                ...current,
+                attempt: response.attempt,
+              }
+            : current,
+        );
       }
 
       setNotice("Your answers have been saved.");
@@ -286,8 +312,16 @@ export default function StudentAssessments() {
     }
   }
 
+  async function viewResult(attemptId) {
+    const response = await request(
+      `/api/student/assessments/attempts/${attemptId}`,
+    );
+
+    setResult(response);
+  }
+
   async function submitAssessment() {
-    if (!active) return;
+    if (!active || busy) return;
 
     const confirmed = window.confirm(
       "Submit this assessment? You will not be able to change your answers afterwards.",
@@ -295,56 +329,60 @@ export default function StudentAssessments() {
 
     if (!confirmed) return;
 
+    const attemptId = active.attempt.id;
+
     setBusy(true);
     setError("");
     setNotice("");
 
     try {
-      // Save the latest answers before submitting.
-      await request(
-        `/api/student/assessments/attempts/${active.attempt.id}/answers`,
-        {
-          method: "PATCH",
-          body: JSON.stringify({ answers }),
-        },
-      );
+      // Save the latest answers when the attempt is still within its time limit.
+      // Once the server confirms expiry, submit the answers already saved.
+      try {
+        await request(
+          `/api/student/assessments/attempts/${attemptId}/answers`,
+          {
+            method: "PATCH",
+            body: JSON.stringify({ answers }),
+          },
+        );
+      } catch (saveError) {
+        if (saveError.code !== "ATTEMPT_TIME_EXPIRED") {
+          throw saveError;
+        }
+      }
 
       const response = await request(
-        `/api/student/assessments/attempts/${active.attempt.id}/submit`,
+        `/api/student/assessments/attempts/${attemptId}/submit`,
         {
           method: "POST",
           body: JSON.stringify({}),
         },
       );
 
+      if (!response?.attempt?.id) {
+        throw new Error("The server did not confirm the submission.");
+      }
+
       setActive(null);
       setAnswers({});
+
       setNotice(
-        response?.grading?.automaticallyGraded
+        response.grading?.automaticallyGraded
           ? "Your assessment has been submitted and graded automatically."
           : "Your assessment has been submitted for correction.",
       );
 
-      // The attempt endpoint returns results only when the student owns it.
-      await viewResult(response.attempt.id);
+      try {
+        await viewResult(response.attempt.id);
+      } catch (resultError) {
+        // Submission succeeded even if fetching the result fails.
+        setError(
+          `Your assessment was submitted, but its result could not be loaded: ${resultError.message}`,
+        );
+      }
+
       await loadLearning();
-    } catch (err) {
-      setError(err.message);
-    } finally {
-      setBusy(false);
-    }
-  }
-
-  async function viewResult(attemptId) {
-    setBusy(true);
-    setError("");
-    setResult(null);
-
-    try {
-      const response = await request(
-        `/api/student/assessments/attempts/${attemptId}`,
-      );
-      setResult(response);
     } catch (err) {
       setError(err.message);
     } finally {
@@ -364,7 +402,7 @@ export default function StudentAssessments() {
     const isOpen = active.attempt.status === "IN_PROGRESS";
     const deadline = getAttemptDeadline(active.attempt, active.assessment);
     const isExpired = deadline !== null && clockNow >= deadline;
-    const canEdit = isOpen && !isExpired;
+    const canEdit = isOpen && !isExpired && !busy;
 
     return (
       <section className="student-assessment-page">
@@ -376,6 +414,7 @@ export default function StudentAssessments() {
             onClick={() => {
               setActive(null);
               setError("");
+              setNotice("");
             }}
           >
             ← Back to assessments
@@ -384,10 +423,13 @@ export default function StudentAssessments() {
           <p className="student-eyebrow">
             {label(active.assessment.assessmentType)}
           </p>
+
           <h2>{active.assessment.title}</h2>
+
           {active.assessment.instructions && (
             <p>{active.assessment.instructions}</p>
           )}
+
           {active.assessment.description && (
             <p>{active.assessment.description}</p>
           )}
@@ -405,6 +447,7 @@ export default function StudentAssessments() {
             >
               <span>{isExpired ? "Time expired" : "Time remaining"}</span>
               <strong>{formatRemainingTime(deadline - clockNow)}</strong>
+
               {isExpired && (
                 <p>
                   Your answers can no longer be changed. Submit your saved
@@ -419,11 +462,13 @@ export default function StudentAssessments() {
               <h3>
                 {index + 1}. {question.prompt}
               </h3>
+
               <p>{question.points} point(s)</p>
+
               <QuestionInput
                 question={question}
                 value={answers[String(question.id)]}
-                disabled={!isOpen || busy}
+                disabled={!canEdit}
                 onChange={(value) => updateAnswer(question.id, value)}
               />
             </article>
@@ -434,6 +479,7 @@ export default function StudentAssessments() {
               {error}
             </div>
           )}
+
           {notice && (
             <div className="student-notice" role="status">
               {notice}
@@ -445,11 +491,12 @@ export default function StudentAssessments() {
               <button
                 type="button"
                 className="student-text-button"
-                disabled={busy}
+                disabled={busy || isExpired}
                 onClick={saveAnswers}
               >
                 {busy ? "Saving…" : "Save answers"}
               </button>
+
               <button
                 type="button"
                 className="student-primary-button"
@@ -474,6 +521,7 @@ export default function StudentAssessments() {
           {error}
         </div>
       )}
+
       {notice && (
         <div className="student-notice" role="status">
           {notice}
@@ -489,8 +537,11 @@ export default function StudentAssessments() {
           >
             ← Close result
           </button>
+
           <p className="student-eyebrow">ASSESSMENT RESULT</p>
+
           <h2>{result.assessment?.title || "Assessment result"}</h2>
+
           <p>Status: {label(result.attempt?.status)}</p>
 
           {result.attempt?.status === "GRADED" ? (
@@ -501,16 +552,19 @@ export default function StudentAssessments() {
                   ? ` / ${result.assessment.maxScore}`
                   : ""}
               </p>
+
               {result.attempt.feedback && (
                 <div>
                   <h3>Instructor feedback</h3>
                   <p>{result.attempt.feedback}</p>
                 </div>
               )}
+
               {Array.isArray(result.explanations) &&
                 result.explanations.some((item) => item.explanation) && (
                   <div>
                     <h3>Answer explanations</h3>
+
                     {result.explanations
                       .filter((item) => item.explanation)
                       .map((item) => (
@@ -534,10 +588,11 @@ export default function StudentAssessments() {
             <p className="student-eyebrow">PRACTICE & FEEDBACK</p>
             <h2>Your assessments</h2>
           </div>
+
           <button
             type="button"
             className="student-inline-link"
-            disabled={loading}
+            disabled={loading || busy}
             onClick={loadLearning}
           >
             Refresh ↻
@@ -561,9 +616,11 @@ export default function StudentAssessments() {
             >
               <div>
                 <strong>{assessment.title}</strong>
+
                 <span>
                   {assessment.courseTitle} · {assessment.cohortName}
                 </span>
+
                 <small>
                   {label(assessment.assessmentType)} ·{" "}
                   {label(assessment.releasePhase)} ·{" "}
@@ -572,6 +629,7 @@ export default function StudentAssessments() {
                     : "No deadline specified"}
                 </small>
               </div>
+
               <div className="student-assessment-list-actions">
                 <button
                   type="button"
