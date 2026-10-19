@@ -23,6 +23,8 @@ model User {
   verifiedPayments     Payment[]            @relation("PaymentVerifier")
   gradedAttempts       AssessmentAttempt[]  @relation("AssessmentGrader")
 
+  createdCourses Course[] @relation("CourseCreator")
+
   @@index([role, isActive])
   @@map("users")
 }
@@ -44,8 +46,14 @@ model Course {
   cohorts Cohort[]
   modules CourseModule[]
 
+  createdById    Int?
+  approvalStatus CourseApprovalStatus @default(APPROVED)
+
+ createdBy User? @relation("CourseCreator", fields: [createdById], references: [id], onDelete: SetNull)
+
   @@index([isPublished, language])
   @@index([examType])
+  @@index([createdById, approvalStatus])
   @@map("courses")
 }
 
@@ -391,4 +399,10 @@ enum AssessmentAttemptStatus {
   IN_PROGRESS
   SUBMITTED
   GRADED
+}
+enum CourseApprovalStatus {
+  DRAFT
+  PENDING_REVIEW
+  APPROVED
+  REJECTED
 }
