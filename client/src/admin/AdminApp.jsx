@@ -470,6 +470,32 @@ export default function AdminApp() {
       setSaving(false);
     }
   }
+
+  async function updateCourseApproval(course, status) {
+    setRecordBusy(`course-${course.id}`);
+    setError("");
+
+    try {
+      await request(`/admin/courses/${course.id}/approval`, {
+        method: "PATCH",
+        headers: { Origin: window.location.origin },
+        body: JSON.stringify({ status }),
+      });
+
+      await loadData();
+
+      flash(
+        status === "APPROVED"
+          ? `Program "${course.title}" approved. Publication remains separate.`
+          : `Program "${course.title}" rejected.`,
+      );
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setRecordBusy(null);
+    }
+  }
+
   async function saveCohort(event) {
     event.preventDefault();
     setSaving(true);
@@ -989,6 +1015,32 @@ export default function AdminApp() {
                           >
                             Edit
                           </button>
+
+                          {c.approvalStatus === "PENDING_REVIEW" && (
+                            <>
+                              <button
+                                className="admin-button small primary"
+                                disabled={recordBusy === `course-${c.id}`}
+                                onClick={() =>
+                                  updateCourseApproval(c, "APPROVED")
+                                }
+                              >
+                                {recordBusy === `course-${c.id}`
+                                  ? "Saving…"
+                                  : "Approve"}
+                              </button>
+
+                              <button
+                                className="admin-button small subtle"
+                                disabled={recordBusy === `course-${c.id}`}
+                                onClick={() =>
+                                  updateCourseApproval(c, "REJECTED")
+                                }
+                              >
+                                Reject
+                              </button>
+                            </>
+                          )}
                         </td>
                       </tr>
                     ))}

@@ -214,4 +214,82 @@ router.patch("/:id", requireSameOrigin, requireAdmin, async (req, res) => {
 // DELETE is intentionally not provided.
 // Unpublish a course with PATCH { "isPublished": false } instead.
 
+const approvalSchema = z
+  .object({
+    status: z.enum(["APPROVED", "REJECTED"]),
+  })
+  .strict();
+
+// PATCH /api/admin/courses/:id/approval
+router.patch(
+  "/:id/approval",
+  requireSameOrigin,
+  requireAdmin,
+  async (req, res) => {
+    const id = parseId(req.params.id);
+
+    if (!id) {
+      return res.status(400).json({
+        error: {
+          code: "INVALID_COURSE_ID",
+          message: "Please provide a valid course ID.",
+        },
+      });
+    }
+
+    const parsed = approvalSchema.safeParse(req.body);
+
+    if (!parsed.success) {
+      return validationError(res, parsed.error);
+    }
+
+    try {
+      const result = await prisma.course.updateMany({
+        where: {
+          id,
+          approvalStatus: "PENDING_REVIEW",
+        },
+        data: {
+          approvalStatus: parsed.data.status,
+        },
+      });
+
+      if (result.count === 0) {
+        const existing = await prisma.course.findUnique({
+          where: { id },
+          select: {
+            id: true,
+            approvalStatus: true,
+          },
+        });
+
+        if (!existing) {
+          return res.status(404).json({
+            error: {
+              code: "COURSE_NOT_FOUND",
+              message: "The requested course was not found.",
+            },
+          });
+        }
+
+        return res.status(409).json({
+          error: {
+            code: "INVALID_APPROVAL_TRANSITION",
+            message:
+              "Only programs pending review can be approved or rejected.",
+          },
+        });
+      }
+
+      const course = await prisma.course.findUnique({
+        where: { id },
+      });
+
+      return res.status(200).json({ data: course });
+    } catch (error) {
+      return handleDatabaseError(res, error, "Admin course approval");
+    }
+  },
+);
+
 export default router;
