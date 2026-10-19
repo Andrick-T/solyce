@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState } from "react";
 import "./InstructorApp.css";
 import MyPrograms from "./MyPrograms.jsx";
+import InstructorLearningStudio from "./InstructorLearningStudio.jsx";
 
 const apiBase = (import.meta.env.VITE_API_BASE_URL || "").replace(/\/$/, "");
 
@@ -64,6 +65,7 @@ export default function InstructorApp() {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
   const [activeView, setActiveView] = useState("overview");
+  const [selectedProgram, setSelectedProgram] = useState(null);
 
   const loadDashboard = useCallback(async () => {
     const result = await api("/dashboard");
@@ -269,7 +271,11 @@ export default function InstructorApp() {
             <span>INSTRUCTOR PORTAL</span>
             <strong>
               Workspace /{" "}
-              {activeView === "programs" ? "My programs" : "Overview"}
+              {activeView === "programs"
+                ? "My programs"
+                : activeView === "studio"
+                  ? "Learning studio"
+                  : "Overview"}
             </strong>
           </div>
           <div className="instructor-top-user">
@@ -288,7 +294,22 @@ export default function InstructorApp() {
           )}
 
           {activeView === "programs" ? (
-            <MyPrograms />
+            <MyPrograms
+              onManageCurriculum={(program) => {
+                setSelectedProgram(program);
+                setActiveView("studio");
+                setError("");
+              }}
+            />
+          ) : activeView === "studio" && selectedProgram ? (
+            <InstructorLearningStudio
+              key={selectedProgram.id}
+              program={selectedProgram}
+              onBack={() => {
+                setActiveView("programs");
+                setError("");
+              }}
+            />
           ) : (
             <>
               <section className="instructor-welcome">

@@ -40,7 +40,7 @@ function statusLabel(status) {
     .replace(/^./, (letter) => letter.toUpperCase());
 }
 
-export default function MyPrograms() {
+export default function MyPrograms({ onManageCurriculum }) {
   const [programs, setPrograms] = useState([]);
   const [form, setForm] = useState(emptyForm);
   const [editingId, setEditingId] = useState(null);
@@ -399,17 +399,29 @@ export default function MyPrograms() {
 
                 <div className="instructor-program-card-bottom">
                   <span>{program._count?.modules || 0} modules</span>
+
                   <div>
+                    <button
+                      type="button"
+                      className="instructor-text-button"
+                      onClick={() => onManageCurriculum?.(program)}
+                    >
+                      Manage curriculum →
+                    </button>
+
                     {editable && (
                       <button
+                        type="button"
                         className="instructor-text-button"
                         onClick={() => startEdit(program.id)}
                       >
                         Edit
                       </button>
                     )}
+
                     {editable && (
                       <button
+                        type="button"
                         className="instructor-text-button"
                         onClick={() => submitForReview(program)}
                       >
