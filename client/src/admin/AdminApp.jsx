@@ -1000,13 +1000,24 @@ export default function AdminApp() {
                         </td>
                         <td>{c.durationWeeks} weeks</td>
                         <td className="table-money">{money(c.priceXaf)}</td>
+
                         <td>
-                          <span
-                            className={`admin-status ${c.isPublished ? "published" : "draft"}`}
-                          >
-                            {c.isPublished ? "Published" : "Draft"}
-                          </span>
+                          <div>
+                            <span
+                              className={`admin-status status-${String(
+                                c.approvalStatus || "PENDING_REVIEW",
+                              ).toLowerCase()}`}
+                            >
+                              {String(
+                                c.approvalStatus || "PENDING_REVIEW",
+                              ).replaceAll("_", " ")}
+                            </span>
+                          </div>
+                          <div className="table-secondary">
+                            {c.isPublished ? "Published" : "Unpublished"}
+                          </div>
                         </td>
+
                         <td>{date(c.updatedAt)}</td>
                         <td>
                           <button
@@ -1875,11 +1886,20 @@ export default function AdminApp() {
                     form: { ...m.form, isPublished: e.target.checked },
                   }))
                 }
+                disabled={
+                  saving ||
+                  (courseModal.form.isPublished === false &&
+                    Boolean(courseModal.id) &&
+                    courses.find((c) => c.id === courseModal.id)
+                      ?.approvalStatus !== "APPROVED")
+                }
               />
               <span>
                 <strong>Publish this program</strong>
+
                 <small>
-                  Published programs are visible in the public catalogue.
+                  Only approved programs can be published in the public
+                  catalogue.
                 </small>
               </span>
             </label>

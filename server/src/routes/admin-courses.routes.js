@@ -255,13 +255,35 @@ router.patch(
       });
 
       if (result.count === 0) {
-        const existing = await prisma.course.findUnique({
+        const existingCourse = await prisma.course.findUnique({
           where: { id },
           select: {
             id: true,
             approvalStatus: true,
+            isPublished: true,
           },
         });
+
+        if (!existingCourse) {
+          return res.status(404).json({
+            error: {
+              code: "COURSE_NOT_FOUND",
+              message: "The requested course was not found.",
+            },
+          });
+        }
+
+        if (
+          parsed.data.isPublished === true &&
+          existingCourse.approvalStatus !== "APPROVED"
+        ) {
+          return res.status(409).json({
+            error: {
+              code: "COURSE_NOT_APPROVED",
+              message: "Only approved programs can be published.",
+            },
+          });
+        }
 
         if (!existing) {
           return res.status(404).json({
