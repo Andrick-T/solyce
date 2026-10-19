@@ -36,7 +36,7 @@ async function request(path, options = {}) {
     throw new Error(body?.error?.message || "Unable to complete this request.");
   }
 
-  return body?.data ?? body;
+  return body;
 }
 
 function normalizeDescription(value) {

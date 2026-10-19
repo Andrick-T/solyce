@@ -56,7 +56,7 @@ export default function MyPrograms({ onManageCurriculum }) {
 
     try {
       const result = await request("");
-      setPrograms(result?.data || []);
+      setPrograms(Array.isArray(result) ? result : []);
     } catch (err) {
       setError(err.message);
     } finally {
