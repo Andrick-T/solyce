@@ -188,7 +188,10 @@ router.patch("/:id", requireSameOrigin, requireAdmin, async (req, res) => {
   try {
     const existingCourse = await prisma.course.findUnique({
       where: { id },
-      select: { id: true },
+      select: {
+        id: true,
+        approvalStatus: true,
+      },
     });
 
     if (!existingCourse) {
@@ -199,7 +202,17 @@ router.patch("/:id", requireSameOrigin, requireAdmin, async (req, res) => {
         },
       });
     }
-
+    if (
+      parsed.data.isPublished === true &&
+      existingCourse.approvalStatus !== "APPROVED"
+    ) {
+      return res.status(409).json({
+        error: {
+          code: "COURSE_NOT_APPROVED",
+          message: "Only approved courses can be published.",
+        },
+      });
+    }
     const course = await prisma.course.update({
       where: { id },
       data: parsed.data,
@@ -251,6 +264,7 @@ router.patch(
         },
         data: {
           approvalStatus: parsed.data.status,
+          ...(parsed.data.status === "REJECTED" ? { isPublished: false } : {}),
         },
       });
 
@@ -260,32 +274,10 @@ router.patch(
           select: {
             id: true,
             approvalStatus: true,
-            isPublished: true,
           },
         });
 
         if (!existingCourse) {
-          return res.status(404).json({
-            error: {
-              code: "COURSE_NOT_FOUND",
-              message: "The requested course was not found.",
-            },
-          });
-        }
-
-        if (
-          parsed.data.isPublished === true &&
-          existingCourse.approvalStatus !== "APPROVED"
-        ) {
-          return res.status(409).json({
-            error: {
-              code: "COURSE_NOT_APPROVED",
-              message: "Only approved programs can be published.",
-            },
-          });
-        }
-
-        if (!existing) {
           return res.status(404).json({
             error: {
               code: "COURSE_NOT_FOUND",
@@ -305,6 +297,13 @@ router.patch(
 
       const course = await prisma.course.findUnique({
         where: { id },
+        select: {
+          id: true,
+          title: true,
+          approvalStatus: true,
+          isPublished: true,
+          updatedAt: true,
+        },
       });
 
       return res.status(200).json({ data: course });

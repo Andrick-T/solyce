@@ -48,8 +48,8 @@ const createSchema = z
     enrollmentDeadline: deadlineSchema.optional(),
     scheduleDescription: z.string().trim().min(3).max(255),
     timezone: z.string().trim().min(1).max(50).default("Africa/Douala"),
-    capacity: z.number().int().min(1).max(500).default(8),
-    minimumStudents: z.number().int().min(1).max(500).default(6),
+    capacity: z.number().int().min(1).max(8).default(8),
+    minimumStudents: z.number().int().min(1).max(8).default(6),
     priceXaf: z.number().int().min(0).max(100000000).nullable().optional(),
     status: z.enum(cohortStatuses).default("DRAFT"),
   })
@@ -64,8 +64,8 @@ const updateSchema = z
     enrollmentDeadline: deadlineSchema.optional(),
     scheduleDescription: z.string().trim().min(3).max(255).optional(),
     timezone: z.string().trim().min(1).max(50).optional(),
-    capacity: z.number().int().min(1).max(500).optional(),
-    minimumStudents: z.number().int().min(1).max(500).optional(),
+    capacity: z.number().int().min(1).max(8).optional(),
+    minimumStudents: z.number().int().min(1).max(8).optional(),
     priceXaf: z.number().int().min(0).max(100000000).nullable().optional(),
     status: z.enum(cohortStatuses).optional(),
   })
