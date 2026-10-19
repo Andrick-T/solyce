@@ -292,12 +292,29 @@ router.post("/:id/submit", requireSameOrigin, async (req, res) => {
       );
     }
 
-    const data = await prisma.course.update({
-      where: { id },
+    const result = await prisma.course.updateMany({
+      where: {
+        id,
+        createdById: req.instructor.id,
+        approvalStatus: { in: ["DRAFT", "REJECTED"] },
+      },
       data: {
         approvalStatus: "PENDING_REVIEW",
         isPublished: false,
       },
+    });
+
+    if (result.count === 0) {
+      return fail(
+        res,
+        409,
+        "PROGRAM_ALREADY_SUBMITTED",
+        "This program has already been submitted or is no longer editable.",
+      );
+    }
+
+    const data = await prisma.course.findUnique({
+      where: { id },
       select: {
         id: true,
         title: true,
