@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useState } from "react";
 import "./InstructorApp.css";
+import MyPrograms from "./MyPrograms.jsx";
 
 const apiBase = (import.meta.env.VITE_API_BASE_URL || "").replace(/\/$/, "");
 
@@ -62,6 +63,7 @@ export default function InstructorApp() {
   const [loading, setLoading] = useState(true);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
+  const [activeView, setActiveView] = useState("overview");
 
   const loadDashboard = useCallback(async () => {
     const result = await api("/dashboard");
@@ -220,13 +222,26 @@ export default function InstructorApp() {
         </div>
 
         <p className="instructor-nav-label">WORKSPACE</p>
-        <a className="instructor-nav-link active" href="/instructor">
+        <button
+          type="button"
+          className={`instructor-nav-link ${activeView === "overview" ? "active" : ""}`}
+          onClick={() => {
+            setActiveView("overview");
+            setError("");
+          }}
+        >
           <span>▦</span> Overview
-        </a>
-        <div className="instructor-nav-link disabled">
+        </button>
+        <button
+          type="button"
+          className={`instructor-nav-link ${activeView === "programs" ? "active" : ""}`}
+          onClick={() => {
+            setActiveView("programs");
+            setError("");
+          }}
+        >
           <span>▤</span> My programs
-          <small>Coming next</small>
-        </div>
+        </button>
         <div className="instructor-nav-link disabled">
           <span>◷</span> My cohorts
         </div>
@@ -252,7 +267,10 @@ export default function InstructorApp() {
         <header className="instructor-topbar">
           <div>
             <span>INSTRUCTOR PORTAL</span>
-            <strong>Workspace / Overview</strong>
+            <strong>
+              Workspace /{" "}
+              {activeView === "programs" ? "My programs" : "Overview"}
+            </strong>
           </div>
           <div className="instructor-top-user">
             <span>{user.fullName}</span>
@@ -269,130 +287,136 @@ export default function InstructorApp() {
             </div>
           )}
 
-          <section className="instructor-welcome">
-            <div>
-              <p className="instructor-eyebrow">YOUR TEACHING SPACE</p>
-              <h1>
-                Welcome back,
-                <br />
-                <em>{user.fullName.split(" ")[0]}.</em>
-              </h1>
-              <p>
-                Manage your assigned cohorts and follow your students' learning
-                journey from one workspace.
-              </p>
-            </div>
-            <div className="instructor-welcome-art" aria-hidden="true">
-              <div className="instructor-art-ring ring-a" />
-              <div className="instructor-art-ring ring-b" />
-              <div className="instructor-art-core">
-                S<span>.</span>
-              </div>
-              <span className="instructor-art-caption">
-                TEACH · GUIDE · GROW
-              </span>
-            </div>
-          </section>
+          {activeView === "programs" ? (
+            <MyPrograms />
+          ) : (
+            <>
+              <section className="instructor-welcome">
+                <div>
+                  <p className="instructor-eyebrow">YOUR TEACHING SPACE</p>
+                  <h1>
+                    Welcome back,
+                    <br />
+                    <em>{user.fullName.split(" ")[0]}.</em>
+                  </h1>
+                  <p>
+                    Manage your assigned cohorts and follow your students'
+                    learning journey from one workspace.
+                  </p>
+                </div>
+                <div className="instructor-welcome-art" aria-hidden="true">
+                  <div className="instructor-art-ring ring-a" />
+                  <div className="instructor-art-ring ring-b" />
+                  <div className="instructor-art-core">
+                    S<span>.</span>
+                  </div>
+                  <span className="instructor-art-caption">
+                    TEACH · GUIDE · GROW
+                  </span>
+                </div>
+              </section>
 
-          <div className="instructor-section-heading">
-            <div>
-              <p className="instructor-eyebrow">AT A GLANCE</p>
-              <h2>Your teaching overview</h2>
-            </div>
-            <button
-              className="instructor-refresh"
-              onClick={() => {
-                setError("");
-                loadDashboard().catch((err) => setError(err.message));
-              }}
-            >
-              ↻ Refresh
-            </button>
-          </div>
-
-          <section className="instructor-stat-grid">
-            <article className="instructor-stat-card">
-              <span>ASSIGNED PROGRAMS</span>
-              <strong>{stats.programs}</strong>
-              <p>Programs linked to your cohorts</p>
-            </article>
-            <article className="instructor-stat-card">
-              <span>MY COHORTS</span>
-              <strong>{stats.assignedCohorts}</strong>
-              <p>All assigned cohorts</p>
-            </article>
-            <article className="instructor-stat-card">
-              <span>ACTIVE COHORTS</span>
-              <strong>{stats.activeCohorts}</strong>
-              <p>Open or currently running</p>
-            </article>
-            <article className="instructor-stat-card">
-              <span>CONFIRMED STUDENTS</span>
-              <strong>{stats.confirmedStudents}</strong>
-              <p>Across your assigned cohorts</p>
-            </article>
-          </section>
-
-          <section className="instructor-panel">
-            <div className="instructor-panel-heading">
-              <div>
-                <p className="instructor-eyebrow">YOUR CLASSES</p>
-                <h2>Assigned cohorts</h2>
+              <div className="instructor-section-heading">
+                <div>
+                  <p className="instructor-eyebrow">AT A GLANCE</p>
+                  <h2>Your teaching overview</h2>
+                </div>
+                <button
+                  className="instructor-refresh"
+                  onClick={() => {
+                    setError("");
+                    loadDashboard().catch((err) => setError(err.message));
+                  }}
+                >
+                  ↻ Refresh
+                </button>
               </div>
-              <span>{dashboard?.cohorts?.length || 0} total</span>
-            </div>
 
-            {!dashboard?.cohorts?.length ? (
-              <div className="instructor-empty">
-                <span>▤</span>
-                <h3>Your teaching journey starts here.</h3>
-                <p>
-                  No cohorts have been assigned to you yet. Once the
-                  administrator assigns a cohort, it will appear here.
-                </p>
-              </div>
-            ) : (
-              <div className="instructor-table-wrap">
-                <table className="instructor-table">
-                  <thead>
-                    <tr>
-                      <th>COHORT / PROGRAM</th>
-                      <th>SCHEDULE</th>
-                      <th>STUDENTS</th>
-                      <th>STATUS</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {dashboard.cohorts.map((cohort) => (
-                      <tr key={cohort.id}>
-                        <td>
-                          <strong>{cohort.name}</strong>
-                          <span>{cohort.course.title}</span>
-                        </td>
-                        <td>
-                          <strong>{formatDate(cohort.startDate)}</strong>
-                          <span>{cohort.scheduleDescription}</span>
-                        </td>
-                        <td>
-                          <strong>
-                            {cohort.confirmedStudents} / {cohort.capacity}
-                          </strong>
-                          <span>confirmed students</span>
-                        </td>
-                        <td>
-                          <span
-                            className={`instructor-status status-${cohort.status.toLowerCase()}`}
-                          >
-                            {label(cohort.status)}
-                          </span>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            )}
-          </section>
+              <section className="instructor-stat-grid">
+                <article className="instructor-stat-card">
+                  <span>ASSIGNED PROGRAMS</span>
+                  <strong>{stats.programs}</strong>
+                  <p>Programs linked to your cohorts</p>
+                </article>
+                <article className="instructor-stat-card">
+                  <span>MY COHORTS</span>
+                  <strong>{stats.assignedCohorts}</strong>
+                  <p>All assigned cohorts</p>
+                </article>
+                <article className="instructor-stat-card">
+                  <span>ACTIVE COHORTS</span>
+                  <strong>{stats.activeCohorts}</strong>
+                  <p>Open or currently running</p>
+                </article>
+                <article className="instructor-stat-card">
+                  <span>CONFIRMED STUDENTS</span>
+                  <strong>{stats.confirmedStudents}</strong>
+                  <p>Across your assigned cohorts</p>
+                </article>
+              </section>
+
+              <section className="instructor-panel">
+                <div className="instructor-panel-heading">
+                  <div>
+                    <p className="instructor-eyebrow">YOUR CLASSES</p>
+                    <h2>Assigned cohorts</h2>
+                  </div>
+                  <span>{dashboard?.cohorts?.length || 0} total</span>
+                </div>
+
+                {!dashboard?.cohorts?.length ? (
+                  <div className="instructor-empty">
+                    <span>▤</span>
+                    <h3>Your teaching journey starts here.</h3>
+                    <p>
+                      No cohorts have been assigned to you yet. Once the
+                      administrator assigns a cohort, it will appear here.
+                    </p>
+                  </div>
+                ) : (
+                  <div className="instructor-table-wrap">
+                    <table className="instructor-table">
+                      <thead>
+                        <tr>
+                          <th>COHORT / PROGRAM</th>
+                          <th>SCHEDULE</th>
+                          <th>STUDENTS</th>
+                          <th>STATUS</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {dashboard.cohorts.map((cohort) => (
+                          <tr key={cohort.id}>
+                            <td>
+                              <strong>{cohort.name}</strong>
+                              <span>{cohort.course.title}</span>
+                            </td>
+                            <td>
+                              <strong>{formatDate(cohort.startDate)}</strong>
+                              <span>{cohort.scheduleDescription}</span>
+                            </td>
+                            <td>
+                              <strong>
+                                {cohort.confirmedStudents} / {cohort.capacity}
+                              </strong>
+                              <span>confirmed students</span>
+                            </td>
+                            <td>
+                              <span
+                                className={`instructor-status status-${cohort.status.toLowerCase()}`}
+                              >
+                                {label(cohort.status)}
+                              </span>
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                )}
+              </section>
+            </>
+          )}
 
           <footer className="instructor-footer">
             <span>
