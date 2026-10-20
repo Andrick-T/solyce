@@ -25,6 +25,7 @@ import instructorRoutes from "./routes/instructor.routes.js";
 import instructorProgramsRoutes from "./routes/instructor-programs.routes.js";
 import instructorPedagogyRoutes from "./routes/instructor-pedagogy.routes.js";
 import instructorAssessmentsRoutes from "./routes/instructor-assessments.routes.js";
+import instructorSessionsRoutes from "./routes/instructor-sessions.routes.js";
 
 const app = express();
 const port = Number(process.env.PORT ?? 5000);
@@ -94,6 +95,7 @@ app.use("/api/instructor", instructorRoutes);
 app.use("/api/instructor/programs", instructorProgramsRoutes);
 app.use("/api/instructor/pedagogy", instructorPedagogyRoutes);
 app.use("/api/instructor/assessments", instructorAssessmentsRoutes);
+app.use("/api/instructor/sessions", instructorSessionsRoutes);
 
 app.get("/api/health", async (_req, res) => {
   try {

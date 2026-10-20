@@ -39,6 +39,20 @@ function safeAssessment(assessment) {
   };
 }
 
+function getMeetingDetails(session, accessPhase) {
+  if (accessPhase === "LOCKED") {
+    return {
+      meetingProvider: null,
+      meetingUrl: null,
+    };
+  }
+
+  return {
+    meetingProvider: session.meetingProvider,
+    meetingUrl: session.meetingUrl,
+  };
+}
+
 // GET /api/student/learning
 // Lists sessions for which the signed-in student has a confirmed enrollment.
 router.get("/", requireStudent, async (req, res) => {
@@ -59,7 +73,13 @@ router.get("/", requireStudent, async (req, res) => {
             name: true,
             timezone: true,
             status: true,
-            course: { select: { id: true, title: true, slug: true } },
+            course: {
+              select: {
+                id: true,
+                title: true,
+                slug: true,
+              },
+            },
           },
         },
       },
@@ -75,16 +95,25 @@ router.get("/", requireStudent, async (req, res) => {
 
     const sessions = await prisma.cohortLesson.findMany({
       where: {
-        cohortId: { in: enrollments.map((enrollment) => enrollment.cohortId) },
+        cohortId: {
+          in: enrollments.map((enrollment) => enrollment.cohortId),
+        },
         status: { not: "CANCELLED" },
-        lesson: { isPublished: true, module: { isPublished: true } },
+        lesson: {
+          isPublished: true,
+          module: { isPublished: true },
+        },
       },
       orderBy: { scheduledAt: "asc" },
       include: {
         lesson: {
           include: {
             module: {
-              select: { id: true, title: true, position: true },
+              select: {
+                id: true,
+                title: true,
+                position: true,
+              },
             },
             resources: {
               where: { isPublished: true },
@@ -126,12 +155,15 @@ router.get("/", requireStudent, async (req, res) => {
 
     const data = sessions.map((session) => {
       const enrollment = enrollmentByCohort.get(session.cohortId);
+
       const accessPhase = getAccessiblePhase(
         session.scheduledAt,
         session.scheduledEndAt,
         session.preparationLeadMinutes,
         now,
       );
+
+      const meetingDetails = getMeetingDetails(session, accessPhase);
 
       const resources = session.lesson.resources.filter((resource) =>
         accessPhase === "AFTER_SESSION"
@@ -158,9 +190,10 @@ router.get("/", requireStudent, async (req, res) => {
         scheduledEndAt: session.scheduledEndAt,
         preparationLeadMinutes: session.preparationLeadMinutes,
         status: session.status,
+        accessPhase,
+        ...meetingDetails,
         instructorNotes:
           accessPhase === "AFTER_SESSION" ? session.instructorNotes : null,
-        accessPhase,
         preparationContent:
           accessPhase === "PREPARATION" || accessPhase === "AFTER_SESSION"
             ? session.lesson.preparationContent
@@ -189,6 +222,7 @@ router.get("/", requireStudent, async (req, res) => {
     return res.json({ data, count: data.length });
   } catch (error) {
     console.error("Student learning listing failed:", error.message);
+
     return fail(
       res,
       500,
@@ -220,7 +254,10 @@ router.get("/sessions/:id", requireStudent, async (req, res) => {
             },
           },
         },
-        lesson: { isPublished: true, module: { isPublished: true } },
+        lesson: {
+          isPublished: true,
+          module: { isPublished: true },
+        },
       },
       include: {
         cohort: {
@@ -229,12 +266,24 @@ router.get("/sessions/:id", requireStudent, async (req, res) => {
             name: true,
             timezone: true,
             status: true,
-            course: { select: { id: true, title: true, slug: true } },
+            course: {
+              select: {
+                id: true,
+                title: true,
+                slug: true,
+              },
+            },
           },
         },
         lesson: {
           include: {
-            module: { select: { id: true, title: true, position: true } },
+            module: {
+              select: {
+                id: true,
+                title: true,
+                position: true,
+              },
+            },
             resources: {
               where: { isPublished: true },
               orderBy: { position: "asc" },
@@ -281,12 +330,15 @@ router.get("/sessions/:id", requireStudent, async (req, res) => {
     }
 
     const now = new Date();
+
     const accessPhase = getAccessiblePhase(
       session.scheduledAt,
       session.scheduledEndAt,
       session.preparationLeadMinutes,
       now,
     );
+
+    const meetingDetails = getMeetingDetails(session, accessPhase);
 
     const resources = session.lesson.resources.filter((resource) =>
       accessPhase === "AFTER_SESSION"
@@ -315,6 +367,7 @@ router.get("/sessions/:id", requireStudent, async (req, res) => {
         preparationLeadMinutes: session.preparationLeadMinutes,
         status: session.status,
         accessPhase,
+        ...meetingDetails,
         instructorNotes:
           accessPhase === "AFTER_SESSION" ? session.instructorNotes : null,
         preparationContent:
@@ -339,6 +392,7 @@ router.get("/sessions/:id", requireStudent, async (req, res) => {
     });
   } catch (error) {
     console.error("Student learning session details failed:", error.message);
+
     return fail(
       res,
       500,

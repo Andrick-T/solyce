@@ -14,6 +14,7 @@ model User {
   passwordHash String   @db.VarChar(255)
   fullName     String   @db.VarChar(150)
   role         UserRole @default(STUDENT)
+  markedAttendance AttendanceRecord[] @relation("AttendanceMarker")
   isActive     Boolean  @default(true)
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
@@ -95,6 +96,7 @@ model Enrollment {
   status         EnrollmentStatus @default(PENDING)
   agreedPriceXaf Int
   enrolledAt     DateTime         @default(now())
+  attendanceRecords AttendanceRecord[]
   confirmedAt    DateTime?
   cancelledAt    DateTime?
   createdAt      DateTime         @default(now())
@@ -250,11 +252,14 @@ model CohortLesson {
   preparationLeadMinutes Int                 @default(30)
   status                  CohortLessonStatus  @default(SCHEDULED)
   instructorNotes         String?             @db.Text
+  meetingProvider MeetingProvider?
+  meetingUrl      String?         @db.VarChar(2048)
   createdAt               DateTime            @default(now())
   updatedAt               DateTime            @updatedAt
 
   cohort   Cohort           @relation(fields: [cohortId], references: [id], onDelete: Restrict)
   lesson   Lesson           @relation(fields: [lessonId], references: [id], onDelete: Restrict)
+  attendance AttendanceRecord[]
   progress LessonProgress[]
 
   @@index([cohortId, scheduledAt, status])
@@ -307,6 +312,27 @@ model AssessmentAttempt {
   @@index([assessmentId, status])
   @@index([gradedById])
   @@map("assessment_attempts")
+}
+
+model AttendanceRecord {
+  id             Int              @id @default(autoincrement())
+  enrollmentId   Int
+  cohortLessonId Int
+  status         AttendanceStatus @default(PRESENT)
+  note           String?          @db.VarChar(500)
+  markedById     Int?
+  markedAt       DateTime         @default(now())
+  createdAt      DateTime         @default(now())
+  updatedAt      DateTime         @updatedAt
+
+  enrollment   Enrollment   @relation(fields: [enrollmentId], references: [id], onDelete: Restrict)
+  cohortLesson CohortLesson @relation(fields: [cohortLessonId], references: [id], onDelete: Restrict)
+  markedBy     User?        @relation("AttendanceMarker", fields: [markedById], references: [id], onDelete: SetNull)
+
+  @@unique([enrollmentId, cohortLessonId])
+  @@index([cohortLessonId, status])
+  @@index([markedById])
+  @@map("attendance_records")
 }
 
 enum UserRole {
@@ -405,4 +431,16 @@ enum CourseApprovalStatus {
   PENDING_REVIEW
   APPROVED
   REJECTED
+}
+enum MeetingProvider {
+  GOOGLE_MEET
+  ZOOM
+  WHATSAPP
+}
+
+enum AttendanceStatus {
+  PRESENT
+  ABSENT
+  LATE
+  EXCUSED
 }
