@@ -111,6 +111,20 @@ function date(value) {
     ? "Not specified"
     : new Intl.DateTimeFormat("en", { dateStyle: "medium" }).format(d);
 }
+
+function dateTime(value) {
+  if (!value) return "Not scheduled";
+  const d = new Date(value);
+
+  return Number.isNaN(d.getTime())
+    ? "Not scheduled"
+    : new Intl.DateTimeFormat("en", {
+        dateStyle: "medium",
+        timeStyle: "short",
+        timeZone: "Africa/Douala",
+      }).format(d);
+}
+
 function statusLabel(value) {
   return String(value || "UNKNOWN")
     .replaceAll("_", " ")
@@ -134,6 +148,22 @@ export default function StudentApp() {
   const [profileBusy, setProfileBusy] = useState(false);
   const currentPage = pageCopy[activePage];
 
+  const [learningSessions, setLearningSessions] = useState([]);
+  const [learningLoading, setLearningLoading] = useState(false);
+
+  const loadLearningSessions = useCallback(async () => {
+    setLearningLoading(true);
+
+    try {
+      const result = await api("/learning");
+      setLearningSessions(Array.isArray(result) ? result : []);
+    } catch (e) {
+      setError(e.message);
+    } finally {
+      setLearningLoading(false);
+    }
+  }, []);
+
   const loadEnrollments = useCallback(async () => {
     setDataLoading(true);
     try {
@@ -155,29 +185,47 @@ export default function StudentApp() {
 
   useEffect(() => {
     let alive = true;
+
     api("/auth/me")
       .then(({ user: current }) => {
         if (!alive) return;
+
         setUser(current);
         setProfileName(current.fullName || "");
+
         return api("/enrollments").then((result) => {
-          if (alive)
-            setEnrollments(
-              Array.isArray(result?.data)
-                ? result.data
-                : Array.isArray(result)
-                  ? result
+          if (!alive) return;
+
+          setEnrollments(
+            Array.isArray(result?.data)
+              ? result.data
+              : Array.isArray(result)
+                ? result
+                : [],
+          );
+
+          return api("/learning").then((learningResult) => {
+            if (!alive) return;
+
+            setLearningSessions(
+              Array.isArray(learningResult?.data)
+                ? learningResult.data
+                : Array.isArray(learningResult)
+                  ? learningResult
                   : [],
             );
+          });
         });
       })
       .catch((e) => {
-        if (alive && !/sign in|session|authentication/i.test(e.message))
+        if (alive && !/sign in|session|authentication/i.test(e.message)) {
           setError(e.message);
+        }
       })
       .finally(() => {
         if (alive) setLoading(false);
       });
+
     return () => {
       alive = false;
     };
@@ -228,6 +276,7 @@ export default function StudentApp() {
       setAuth({ fullName: "", email: "", password: "" });
       setEnrollments([]);
       await loadEnrollments();
+      await loadLearningSessions();
       setNotice("You are signed in.");
     } catch (e) {
       setError(e.message);
@@ -248,6 +297,7 @@ export default function StudentApp() {
     setEnrollments([]);
     setAuth({ fullName: "", email: "", password: "" });
     setAuthMode("login");
+    setLearningSessions([]);
   }
   async function saveProfile(event) {
     event.preventDefault();
@@ -747,31 +797,78 @@ export default function StudentApp() {
                 </div>
               ) : activePage === "schedule" ? (
                 <div className="student-panel student-subpage-panel">
-                  {enrollments.length ? (
-                    enrollments.map((e) => (
-                      <div className="student-record" key={e.id}>
+                  <div className="student-panel-heading">
+                    <div>
+                      <p className="student-eyebrow">YOUR LIVE CLASSES</p>
+                      <h2>Scheduled lessons</h2>
+                    </div>
+                    <button
+                      type="button"
+                      className="student-inline-link"
+                      onClick={loadLearningSessions}
+                      disabled={learningLoading}
+                    >
+                      {learningLoading ? "Refreshing…" : "Refresh ↻"}
+                    </button>
+                  </div>
+
+                  {learningLoading ? (
+                    <EmptyState title="Loading your schedule">
+                      Your scheduled lessons are being retrieved.
+                    </EmptyState>
+                  ) : learningSessions.length === 0 ? (
+                    <EmptyState title="No lessons scheduled yet">
+                      Scheduled lessons for your confirmed enrolments will
+                      appear here.
+                    </EmptyState>
+                  ) : (
+                    learningSessions.map((session) => (
+                      <article className="student-record" key={session.id}>
                         <div>
-                          <strong>{e.cohort?.name || "Cohort"}</strong>
+                          <strong>
+                            {session.lesson?.title || "Scheduled lesson"}
+                          </strong>
                           <span>
-                            {e.cohort?.course?.title || "Course"} ·{" "}
-                            {e.cohort?.timezone || "Africa/Douala"}
+                            {session.cohort?.course?.title ||
+                              session.cohort?.name}
+                            {" · "}
+                            {session.lesson?.module?.title || "Course lesson"}
                           </span>
                           <small>
-                            {date(e.cohort?.startDate)} –{" "}
-                            {date(e.cohort?.endDate)} ·{" "}
-                            {e.cohort?.scheduleDescription ||
-                              "Schedule not specified"}{" "}
-                            · {statusLabel(e.cohort?.status)}
+                            Starts: {dateTime(session.scheduledAt)}
+                            {" · "}
+                            Ends: {dateTime(session.scheduledEndAt)}
                           </small>
+                          <small>
+                            Access: {statusLabel(session.accessPhase)}
+                          </small>
+
+                          {session.accessPhase === "LOCKED" ? (
+                            <small>
+                              The meeting link will become available when the
+                              preparation period opens.
+                            </small>
+                          ) : session.meetingUrl ? (
+                            <a
+                              href={session.meetingUrl}
+                              target="_blank"
+                              rel="noreferrer"
+                            >
+                              Join{" "}
+                              {statusLabel(
+                                session.meetingProvider || "online meeting",
+                              )}{" "}
+                              ↗
+                            </a>
+                          ) : (
+                            <small>
+                              The instructor has not added a meeting link yet.
+                            </small>
+                          )}
                         </div>
-                      </div>
+                        <b>{statusLabel(session.status)}</b>
+                      </article>
                     ))
-                  ) : (
-                    <EmptyState title="Your schedule is taking shape">
-                      Cohort dates appear here when linked enrolments exist.
-                      Live meeting links and individual session times are not
-                      provided by the current data model.
-                    </EmptyState>
                   )}
                 </div>
               ) : activePage === "payments" ? (
