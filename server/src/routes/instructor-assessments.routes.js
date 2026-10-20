@@ -23,10 +23,24 @@ function parseId(value) {
 
 const gradeSchema = z
   .object({
-    score: z.number().finite().min(0),
+    questionScores: z
+      .array(
+        z
+          .object({
+            questionId: z.number().int().positive(),
+            pointsAwarded: z.number().finite().min(0),
+          })
+          .strict(),
+      )
+      .optional(),
+    score: z.number().finite().min(0).optional(),
     feedback: z.string().trim().max(10000).nullable().optional(),
   })
-  .strict();
+  .strict()
+  .refine(
+    (data) => data.questionScores !== undefined || data.score !== undefined,
+    "Provide question scores or a final score.",
+  );
 
 function instructorAttemptWhere(instructorId, attemptId) {
   return {
@@ -233,16 +247,25 @@ router.get("/attempts/:id", async (req, res) => {
           lesson: attempt.assessment.lesson.title,
           module: attempt.assessment.lesson.module.title,
           course: attempt.assessment.lesson.module.course.title,
-          questions: attempt.assessment.questions.map((question) => ({
-            id: question.id,
-            prompt: question.prompt,
-            questionType: question.questionType,
-            options: question.options,
-            correctAnswer: question.correctAnswer,
-            explanation: question.explanation,
-            points: question.points,
-            position: question.position,
-          })),
+          questions: attempt.assessment.questions.map((question) => {
+            const canReviewAnswers =
+              attempt.status === "SUBMITTED" || attempt.status === "GRADED";
+
+            return {
+              id: question.id,
+              prompt: question.prompt,
+              questionType: question.questionType,
+              options: question.options,
+              ...(canReviewAnswers
+                ? {
+                    correctAnswer: question.correctAnswer,
+                    explanation: question.explanation,
+                  }
+                : {}),
+              points: question.points,
+              position: question.position,
+            };
+          }),
         },
         student: attempt.enrollment.user
           ? {
@@ -265,6 +288,7 @@ router.get("/attempts/:id", async (req, res) => {
 });
 
 // PATCH /api/instructor/assessments/attempts/:id/grade
+
 router.patch("/attempts/:id/grade", requireSameOrigin, async (req, res) => {
   const id = parseId(req.params.id);
   const parsed = gradeSchema.safeParse(req.body);
@@ -278,7 +302,7 @@ router.patch("/attempts/:id/grade", requireSameOrigin, async (req, res) => {
       res,
       400,
       "VALIDATION_ERROR",
-      "Provide a valid score and feedback.",
+      "Provide valid grading information.",
     );
   }
 
@@ -288,26 +312,74 @@ router.patch("/attempts/:id/grade", requireSameOrigin, async (req, res) => {
         where: instructorAttemptWhere(req.instructor.id, id),
         include: {
           assessment: {
-            select: { maxScore: true },
+            include: {
+              questions: {
+                orderBy: { position: "asc" },
+              },
+            },
           },
         },
       });
 
-      if (!attempt) {
-        return { error: "NOT_GRADEABLE" };
+      if (!attempt) return { error: "NOT_GRADEABLE" };
+
+      const questions = attempt.assessment.questions;
+      let finalScore;
+
+      if (parsed.data.questionScores !== undefined) {
+        const scores = parsed.data.questionScores;
+        const questionById = new Map(
+          questions.map((question) => [question.id, question]),
+        );
+        const seen = new Set();
+
+        for (const item of scores) {
+          if (seen.has(item.questionId)) {
+            return { error: "DUPLICATE_QUESTION" };
+          }
+
+          seen.add(item.questionId);
+
+          const question = questionById.get(item.questionId);
+
+          if (!question) {
+            return { error: "INVALID_QUESTION" };
+          }
+
+          if (item.pointsAwarded > question.points) {
+            return { error: "SCORE_EXCEEDS_POINTS" };
+          }
+        }
+
+        if (
+          scores.length !== questions.length ||
+          questions.some((question) => !seen.has(question.id))
+        ) {
+          return { error: "INCOMPLETE_GRADING" };
+        }
+
+        finalScore = scores.reduce((sum, item) => sum + item.pointsAwarded, 0);
+
+        if (
+          parsed.data.score !== undefined &&
+          Math.abs(parsed.data.score - finalScore) > 0.001
+        ) {
+          return { error: "SCORE_MISMATCH" };
+        }
+      } else {
+        finalScore = parsed.data.score;
       }
 
-      if (
-        attempt.assessment.maxScore !== null &&
-        parsed.data.score > attempt.assessment.maxScore
-      ) {
-        return { error: "SCORE_TOO_HIGH" };
+      const maxScore = attempt.assessment.maxScore;
+
+      if (maxScore !== null && finalScore > maxScore) {
+        return { error: "SCORE_EXCEEDS_MAX" };
       }
 
       const updated = await tx.assessmentAttempt.update({
         where: { id },
         data: {
-          score: new Prisma.Decimal(parsed.data.score.toFixed(2)),
+          score: new Prisma.Decimal(finalScore.toFixed(2)),
           feedback: parsed.data.feedback ?? null,
           status: "GRADED",
           gradedAt: new Date(),
@@ -325,27 +397,53 @@ router.patch("/attempts/:id/grade", requireSameOrigin, async (req, res) => {
       return { attempt: updated };
     });
 
-    if (result.error === "NOT_GRADEABLE") {
-      return fail(
-        res,
+    const errors = {
+      NOT_GRADEABLE: [
         404,
         "ATTEMPT_NOT_GRADEABLE",
         "This submitted attempt was not found in your assigned cohorts.",
-      );
-    }
-
-    if (result.error === "SCORE_TOO_HIGH") {
-      return fail(
-        res,
+      ],
+      DUPLICATE_QUESTION: [
+        400,
+        "DUPLICATE_QUESTION",
+        "A question was graded more than once.",
+      ],
+      INVALID_QUESTION: [
+        400,
+        "INVALID_QUESTION",
+        "A score refers to an unknown question.",
+      ],
+      SCORE_EXCEEDS_POINTS: [
+        400,
+        "SCORE_TOO_HIGH",
+        "A question score exceeds its maximum points.",
+      ],
+      INCOMPLETE_GRADING: [
+        400,
+        "INCOMPLETE_GRADING",
+        "Provide a score for every question.",
+      ],
+      SCORE_MISMATCH: [
+        400,
+        "SCORE_MISMATCH",
+        "The final score does not match the question scores.",
+      ],
+      SCORE_EXCEEDS_MAX: [
         400,
         "SCORE_TOO_HIGH",
         "The score exceeds the assessment maximum.",
-      );
+      ],
+    };
+
+    if (result.error) {
+      const [status, code, message] = errors[result.error];
+      return fail(res, status, code, message);
     }
 
     return res.json({ data: result.attempt });
   } catch (error) {
     console.error("Instructor grading failed:", error.message);
+
     return fail(
       res,
       500,
