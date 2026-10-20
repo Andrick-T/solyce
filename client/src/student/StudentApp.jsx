@@ -151,6 +151,29 @@ export default function StudentApp() {
   const [learningSessions, setLearningSessions] = useState([]);
   const [learningLoading, setLearningLoading] = useState(false);
 
+  const [selectedSession, setSelectedSession] = useState(null);
+  const [sessionDetailLoading, setSessionDetailLoading] = useState(false);
+
+  const loadSessionDetail = useCallback(async (sessionId) => {
+    setSessionDetailLoading(true);
+    setError("");
+    setSelectedSession(null);
+
+    try {
+      const result = await api(`/learning/sessions/${sessionId}`);
+
+      if (!result || result.id !== sessionId) {
+        throw new Error("Unable to load this learning session.");
+      }
+
+      setSelectedSession(result);
+    } catch (e) {
+      setError(e.message);
+    } finally {
+      setSessionDetailLoading(false);
+    }
+  }, []);
+
   const loadLearningSessions = useCallback(async () => {
     setLearningLoading(true);
 
@@ -797,78 +820,312 @@ export default function StudentApp() {
                 </div>
               ) : activePage === "schedule" ? (
                 <div className="student-panel student-subpage-panel">
-                  <div className="student-panel-heading">
-                    <div>
-                      <p className="student-eyebrow">YOUR LIVE CLASSES</p>
-                      <h2>Scheduled lessons</h2>
-                    </div>
-                    <button
-                      type="button"
-                      className="student-inline-link"
-                      onClick={loadLearningSessions}
-                      disabled={learningLoading}
-                    >
-                      {learningLoading ? "Refreshing…" : "Refresh ↻"}
-                    </button>
-                  </div>
+                  {selectedSession ? (
+                    <>
+                      <button
+                        type="button"
+                        className="student-text-button"
+                        onClick={() => setSelectedSession(null)}
+                        disabled={sessionDetailLoading}
+                        style={{ color: "var(--st-ink)", marginBottom: 20 }}
+                      >
+                        ← Back to schedule
+                      </button>
 
-                  {learningLoading ? (
-                    <EmptyState title="Loading your schedule">
-                      Your scheduled lessons are being retrieved.
-                    </EmptyState>
-                  ) : learningSessions.length === 0 ? (
-                    <EmptyState title="No lessons scheduled yet">
-                      Scheduled lessons for your confirmed enrolments will
-                      appear here.
-                    </EmptyState>
-                  ) : (
-                    learningSessions.map((session) => (
-                      <article className="student-record" key={session.id}>
+                      <p className="student-eyebrow">YOUR LEARNING SESSION</p>
+                      <h2>
+                        {selectedSession.lesson?.title || "Learning session"}
+                      </h2>
+
+                      <p>
+                        {selectedSession.cohort?.course?.title ||
+                          "Solyce course"}
+                        {" · "}
+                        {selectedSession.lesson?.module?.title ||
+                          "Course lesson"}
+                      </p>
+
+                      <div className="student-record">
                         <div>
-                          <strong>
-                            {session.lesson?.title || "Scheduled lesson"}
-                          </strong>
+                          <strong>Session schedule</strong>
                           <span>
-                            {session.cohort?.course?.title ||
-                              session.cohort?.name}
-                            {" · "}
-                            {session.lesson?.module?.title || "Course lesson"}
+                            Starts: {dateTime(selectedSession.scheduledAt)}
+                          </span>
+                          <span>
+                            Ends: {dateTime(selectedSession.scheduledEndAt)}
                           </span>
                           <small>
-                            Starts: {dateTime(session.scheduledAt)}
-                            {" · "}
-                            Ends: {dateTime(session.scheduledEndAt)}
+                            Access: {statusLabel(selectedSession.accessPhase)}
                           </small>
-                          <small>
-                            Access: {statusLabel(session.accessPhase)}
-                          </small>
-
-                          {session.accessPhase === "LOCKED" ? (
-                            <small>
-                              The meeting link will become available when the
-                              preparation period opens.
-                            </small>
-                          ) : session.meetingUrl ? (
-                            <a
-                              href={session.meetingUrl}
-                              target="_blank"
-                              rel="noreferrer"
-                            >
-                              Join{" "}
-                              {statusLabel(
-                                session.meetingProvider || "online meeting",
-                              )}{" "}
-                              ↗
-                            </a>
-                          ) : (
-                            <small>
-                              The instructor has not added a meeting link yet.
-                            </small>
-                          )}
                         </div>
-                        <b>{statusLabel(session.status)}</b>
-                      </article>
-                    ))
+                        <b>{statusLabel(selectedSession.status)}</b>
+                      </div>
+
+                      {selectedSession.lesson?.description && (
+                        <section style={{ marginTop: 24 }}>
+                          <h3>About this lesson</h3>
+                          <p>{selectedSession.lesson.description}</p>
+                        </section>
+                      )}
+
+                      {Array.isArray(selectedSession.lesson?.objectives) &&
+                        selectedSession.lesson.objectives.length > 0 && (
+                          <section style={{ marginTop: 24 }}>
+                            <h3>Learning objectives</h3>
+                            <ul>
+                              {selectedSession.lesson.objectives.map(
+                                (objective, index) => (
+                                  <li key={`${index}-${objective}`}>
+                                    {typeof objective === "string"
+                                      ? objective
+                                      : objective.title ||
+                                        objective.text ||
+                                        JSON.stringify(objective)}
+                                  </li>
+                                ),
+                              )}
+                            </ul>
+                          </section>
+                        )}
+
+                      {selectedSession.accessPhase === "LOCKED" ? (
+                        <div style={{ marginTop: 24 }}>
+                          <h3>Preparation</h3>
+                          <p>
+                            Your preparation materials and meeting link will
+                            become available when the preparation period opens.
+                          </p>
+                        </div>
+                      ) : (
+                        <>
+                          {selectedSession.meetingUrl && (
+                            <section style={{ marginTop: 24 }}>
+                              <h3>Live class</h3>
+                              <p>
+                                Platform:{" "}
+                                {statusLabel(
+                                  selectedSession.meetingProvider ||
+                                    "Online meeting",
+                                )}
+                              </p>
+                              <a
+                                className="student-primary-button"
+                                href={selectedSession.meetingUrl}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                              >
+                                Join live class ↗
+                              </a>
+                            </section>
+                          )}
+
+                          {selectedSession.preparationContent && (
+                            <section style={{ marginTop: 24 }}>
+                              <h3>Preparation guide</h3>
+                              <div
+                                style={{
+                                  whiteSpace: "pre-wrap",
+                                  lineHeight: 1.8,
+                                }}
+                              >
+                                {selectedSession.preparationContent}
+                              </div>
+                            </section>
+                          )}
+
+                          {selectedSession.accessPhase === "AFTER_SESSION" &&
+                            selectedSession.content && (
+                              <section style={{ marginTop: 24 }}>
+                                <h3>Lesson content</h3>
+                                <div
+                                  style={{
+                                    whiteSpace: "pre-wrap",
+                                    lineHeight: 1.8,
+                                  }}
+                                >
+                                  {selectedSession.content}
+                                </div>
+                              </section>
+                            )}
+
+                          {selectedSession.accessPhase === "AFTER_SESSION" &&
+                            selectedSession.instructorNotes && (
+                              <section style={{ marginTop: 24 }}>
+                                <h3>Instructor notes</h3>
+                                <div
+                                  style={{
+                                    whiteSpace: "pre-wrap",
+                                    lineHeight: 1.8,
+                                  }}
+                                >
+                                  {selectedSession.instructorNotes}
+                                </div>
+                              </section>
+                            )}
+
+                          <section style={{ marginTop: 24 }}>
+                            <h3>Available resources</h3>
+
+                            {selectedSession.resources?.length ? (
+                              selectedSession.resources.map((resource) => (
+                                <article
+                                  className="student-record"
+                                  key={resource.id}
+                                >
+                                  <div>
+                                    <strong>{resource.title}</strong>
+                                    {resource.description && (
+                                      <span>{resource.description}</span>
+                                    )}
+                                    <small>
+                                      {statusLabel(resource.resourceType)}
+                                    </small>
+                                  </div>
+                                  {resource.url && (
+                                    <a
+                                      href={resource.url}
+                                      target="_blank"
+                                      rel="noopener noreferrer"
+                                    >
+                                      Open ↗
+                                    </a>
+                                  )}
+                                </article>
+                              ))
+                            ) : (
+                              <p>
+                                No resources are available during this phase.
+                              </p>
+                            )}
+                          </section>
+
+                          <section style={{ marginTop: 24 }}>
+                            <h3>Assessments</h3>
+
+                            {selectedSession.assessments?.length ? (
+                              selectedSession.assessments.map((assessment) => (
+                                <article
+                                  className="student-record"
+                                  key={assessment.id}
+                                >
+                                  <div>
+                                    <strong>{assessment.title}</strong>
+                                    {assessment.description && (
+                                      <span>{assessment.description}</span>
+                                    )}
+                                    <small>
+                                      {statusLabel(assessment.assessmentType)}
+                                    </small>
+                                  </div>
+                                  <button
+                                    type="button"
+                                    className="student-inline-link"
+                                    onClick={() => navigate("assignments")}
+                                  >
+                                    Go to assessments →
+                                  </button>
+                                </article>
+                              ))
+                            ) : (
+                              <p>
+                                No assessments are available during this phase.
+                              </p>
+                            )}
+                          </section>
+                        </>
+                      )}
+                    </>
+                  ) : (
+                    <>
+                      <div className="student-panel-heading">
+                        <div>
+                          <p className="student-eyebrow">YOUR LIVE CLASSES</p>
+                          <h2>Scheduled lessons</h2>
+                        </div>
+                        <button
+                          type="button"
+                          className="student-inline-link"
+                          onClick={loadLearningSessions}
+                          disabled={learningLoading}
+                        >
+                          {learningLoading ? "Refreshing…" : "Refresh ↻"}
+                        </button>
+                      </div>
+
+                      {learningLoading ? (
+                        <EmptyState title="Loading your schedule">
+                          Your scheduled lessons are being retrieved.
+                        </EmptyState>
+                      ) : learningSessions.length === 0 ? (
+                        <EmptyState title="No lessons scheduled yet">
+                          Scheduled lessons for your confirmed enrolments will
+                          appear here.
+                        </EmptyState>
+                      ) : (
+                        learningSessions.map((session) => (
+                          <article className="student-record" key={session.id}>
+                            <div>
+                              <strong>
+                                {session.lesson?.title || "Scheduled lesson"}
+                              </strong>
+                              <span>
+                                {session.cohort?.course?.title ||
+                                  session.cohort?.name}
+                                {" · "}
+                                {session.lesson?.module?.title ||
+                                  "Course lesson"}
+                              </span>
+                              <small>
+                                Starts: {dateTime(session.scheduledAt)}
+                                {" · "}
+                                Ends: {dateTime(session.scheduledEndAt)}
+                              </small>
+                              <small>
+                                Access: {statusLabel(session.accessPhase)}
+                              </small>
+
+                              {session.accessPhase === "LOCKED" ? (
+                                <small>
+                                  The meeting link will become available when
+                                  the preparation period opens.
+                                </small>
+                              ) : session.meetingUrl ? (
+                                <a
+                                  href={session.meetingUrl}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                >
+                                  Join{" "}
+                                  {statusLabel(
+                                    session.meetingProvider || "online meeting",
+                                  )}{" "}
+                                  ↗
+                                </a>
+                              ) : (
+                                <small>
+                                  The instructor has not added a meeting link
+                                  yet.
+                                </small>
+                              )}
+
+                              <button
+                                type="button"
+                                className="student-inline-link"
+                                disabled={sessionDetailLoading}
+                                onClick={() => loadSessionDetail(session.id)}
+                              >
+                                View lesson details →
+                              </button>
+                            </div>
+                            <b>{statusLabel(session.status)}</b>
+                          </article>
+                        ))
+                      )}
+
+                      {sessionDetailLoading && (
+                        <p role="status">Loading lesson details…</p>
+                      )}
+                    </>
                   )}
                 </div>
               ) : activePage === "payments" ? (

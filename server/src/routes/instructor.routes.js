@@ -147,6 +147,8 @@ router.get("/cohorts/:id", async (req, res) => {
             scheduledEndAt: true,
             status: true,
             instructorNotes: true,
+            meetingProvider: true,
+            meetingUrl: true,
             lesson: {
               select: {
                 id: true,
