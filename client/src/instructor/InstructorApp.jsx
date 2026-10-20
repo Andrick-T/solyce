@@ -3,6 +3,7 @@ import "./InstructorApp.css";
 import MyPrograms from "./MyPrograms.jsx";
 import InstructorLearningStudio from "./InstructorLearningStudio.jsx";
 import MyCohorts from "./MyCohorts.jsx";
+import InstructorAssessments from "./Assessments.jsx";
 
 const apiBase = (import.meta.env.VITE_API_BASE_URL || "").replace(/\/$/, "");
 
@@ -255,9 +256,18 @@ export default function InstructorApp() {
         >
           <span>◷</span> My cohorts
         </button>
-        <div className="instructor-nav-link disabled">
+        <button
+          type="button"
+          className={`instructor-nav-link ${
+            activeView === "assessments" ? "active" : ""
+          }`}
+          onClick={() => {
+            setActiveView("assessments");
+            setError("");
+          }}
+        >
           <span>✓</span> Assessments
-        </div>
+        </button>
 
         <div className="instructor-sidebar-bottom">
           <div className="instructor-help-card">
@@ -285,7 +295,9 @@ export default function InstructorApp() {
                   ? "Learning studio"
                   : activeView === "cohorts"
                     ? "My cohorts"
-                    : "Overview"}
+                    : activeView === "assessments"
+                      ? "Assessments"
+                      : "Overview"}
             </strong>
           </div>
           <div className="instructor-top-user">
@@ -303,7 +315,9 @@ export default function InstructorApp() {
             </div>
           )}
 
-          {activeView === "cohorts" ? (
+          {activeView === "assessments" ? (
+            <InstructorAssessments />
+          ) : activeView === "cohorts" ? (
             <MyCohorts />
           ) : activeView === "programs" ? (
             <MyPrograms

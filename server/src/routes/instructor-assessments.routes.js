@@ -172,6 +172,131 @@ router.get("/", async (req, res) => {
   }
 });
 
+/**
+ * GET /api/instructor/assessments/:assessmentId/attempts
+ * Lists submitted and graded attempts for an assessment
+ * belonging to a course assigned to the authenticated instructor.
+ */
+router.get("/:assessmentId/attempts", async (req, res) => {
+  const assessmentId = parseId(req.params.assessmentId);
+
+  if (!assessmentId) {
+    return fail(res, 400, "INVALID_ASSESSMENT_ID", "Invalid assessment ID.");
+  }
+
+  try {
+    const assessment = await prisma.assessment.findFirst({
+      where: {
+        id: assessmentId,
+        lesson: {
+          module: {
+            course: {
+              cohorts: {
+                some: {
+                  instructorId: req.instructor.id,
+                },
+              },
+            },
+          },
+        },
+      },
+      select: {
+        id: true,
+        title: true,
+        maxScore: true,
+        lesson: {
+          select: {
+            title: true,
+            module: {
+              select: {
+                title: true,
+                course: {
+                  select: { id: true, title: true },
+                },
+              },
+            },
+          },
+        },
+      },
+    });
+
+    if (!assessment) {
+      return fail(res, 404, "ASSESSMENT_NOT_FOUND", "Assessment not found.");
+    }
+
+    const attempts = await prisma.assessmentAttempt.findMany({
+      where: {
+        assessmentId,
+        status: { in: ["SUBMITTED", "GRADED"] },
+        enrollment: {
+          cohort: {
+            instructorId: req.instructor.id,
+            courseId: assessment.lesson.module.course.id,
+          },
+        },
+      },
+      orderBy: [{ submittedAt: "asc" }, { id: "asc" }],
+      select: {
+        id: true,
+        status: true,
+        attemptNumber: true,
+        score: true,
+        submittedAt: true,
+        gradedAt: true,
+        enrollment: {
+          select: {
+            id: true,
+            user: {
+              select: {
+                fullName: true,
+                email: true,
+              },
+            },
+            guestFullName: true,
+            guestEmail: true,
+            cohort: {
+              select: { id: true, name: true },
+            },
+          },
+        },
+      },
+    });
+
+    return res.json({
+      data: {
+        assessment,
+        attempts: attempts.map((attempt) => ({
+          id: attempt.id,
+          status: attempt.status,
+          attemptNumber: attempt.attemptNumber,
+          score: attempt.score,
+          submittedAt: attempt.submittedAt,
+          gradedAt: attempt.gradedAt,
+          student: attempt.enrollment.user
+            ? {
+                fullName: attempt.enrollment.user.fullName,
+                email: attempt.enrollment.user.email,
+              }
+            : {
+                fullName: attempt.enrollment.guestFullName || "Guest student",
+                email: attempt.enrollment.guestEmail,
+              },
+          cohort: attempt.enrollment.cohort,
+        })),
+      },
+    });
+  } catch (error) {
+    console.error("Instructor assessment attempts failed:", error.message);
+
+    return fail(
+      res,
+      500,
+      "INTERNAL_SERVER_ERROR",
+      "Unable to load assessment attempts.",
+    );
+  }
+});
+
 // GET /api/instructor/assessments/attempts/:id
 router.get("/attempts/:id", async (req, res) => {
   const id = parseId(req.params.id);
