@@ -36,9 +36,9 @@ const pageCopy = {
   },
   resources: {
     eyebrow: "YOUR LEARNING LIBRARY",
-    title: "Resources",
+    title: "Learning resources",
     description:
-      "Learning resources will appear here when supported by the platform.",
+      "Find your preparation materials, lesson documents and practice resources in one place.",
   },
   payments: {
     eyebrow: "ACCOUNT OVERVIEW",
@@ -1126,6 +1126,109 @@ export default function StudentApp() {
                         <p role="status">Loading lesson details…</p>
                       )}
                     </>
+                  )}
+                </div>
+              ) : activePage === "resources" ? (
+                <div className="student-panel student-subpage-panel">
+                  <div className="student-panel-heading">
+                    <div>
+                      <p className="student-eyebrow">YOUR COURSE MATERIALS</p>
+                      <h2>Resources library</h2>
+                    </div>
+                    <button
+                      type="button"
+                      className="student-inline-link"
+                      onClick={loadLearningSessions}
+                      disabled={learningLoading}
+                    >
+                      {learningLoading ? "Refreshing…" : "Refresh ↻"}
+                    </button>
+                  </div>
+
+                  {learningLoading ? (
+                    <EmptyState title="Loading your resources">
+                      Your available course materials are being retrieved.
+                    </EmptyState>
+                  ) : (
+                    (() => {
+                      const sessionsWithResources = learningSessions.filter(
+                        (session) =>
+                          Array.isArray(session.resources) &&
+                          session.resources.length > 0,
+                      );
+
+                      if (sessionsWithResources.length === 0) {
+                        return (
+                          <EmptyState title="Your library is not ready yet">
+                            Resources will appear here when your instructor
+                            publishes materials and your access period opens.
+                            You can also check your scheduled lessons for
+                            preparation guides and lesson details.
+                          </EmptyState>
+                        );
+                      }
+
+                      return sessionsWithResources.map((session) => (
+                        <section key={session.id} style={{ marginBottom: 28 }}>
+                          <div style={{ marginBottom: 14 }}>
+                            <h3 style={{ marginBottom: 5 }}>
+                              {session.lesson?.title || "Learning session"}
+                            </h3>
+                            <p style={{ margin: 0 }}>
+                              {session.cohort?.course?.title ||
+                                session.cohort?.name ||
+                                "Solyce course"}
+                              {" · "}
+                              {dateTime(session.scheduledAt)}
+                            </p>
+                          </div>
+
+                          {session.resources.map((resource) => (
+                            <article
+                              className="student-record"
+                              key={`${session.id}-${resource.id}`}
+                            >
+                              <div>
+                                <strong>{resource.title}</strong>
+
+                                {resource.description && (
+                                  <span>{resource.description}</span>
+                                )}
+
+                                <small>
+                                  {statusLabel(resource.resourceType)}
+                                  {" · "}
+                                  {statusLabel(resource.releasePhase)}
+                                </small>
+                              </div>
+
+                              {resource.url ? (
+                                <a
+                                  href={resource.url}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                >
+                                  Open resource ↗
+                                </a>
+                              ) : (
+                                <small>Link unavailable</small>
+                              )}
+                            </article>
+                          ))}
+
+                          <button
+                            type="button"
+                            className="student-inline-link"
+                            onClick={() => {
+                              navigate("schedule");
+                              loadSessionDetail(session.id);
+                            }}
+                          >
+                            View lesson details →
+                          </button>
+                        </section>
+                      ));
+                    })()
                   )}
                 </div>
               ) : activePage === "payments" ? (
