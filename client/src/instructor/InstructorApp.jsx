@@ -2,6 +2,7 @@ import { useCallback, useEffect, useState } from "react";
 import "./InstructorApp.css";
 import MyPrograms from "./MyPrograms.jsx";
 import InstructorLearningStudio from "./InstructorLearningStudio.jsx";
+import MyCohorts from "./MyCohorts.jsx";
 
 const apiBase = (import.meta.env.VITE_API_BASE_URL || "").replace(/\/$/, "");
 
@@ -244,9 +245,16 @@ export default function InstructorApp() {
         >
           <span>▤</span> My programs
         </button>
-        <div className="instructor-nav-link disabled">
+        <button
+          type="button"
+          className={`instructor-nav-link ${activeView === "cohorts" ? "active" : ""}`}
+          onClick={() => {
+            setActiveView("cohorts");
+            setError("");
+          }}
+        >
           <span>◷</span> My cohorts
-        </div>
+        </button>
         <div className="instructor-nav-link disabled">
           <span>✓</span> Assessments
         </div>
@@ -275,7 +283,9 @@ export default function InstructorApp() {
                 ? "My programs"
                 : activeView === "studio"
                   ? "Learning studio"
-                  : "Overview"}
+                  : activeView === "cohorts"
+                    ? "My cohorts"
+                    : "Overview"}
             </strong>
           </div>
           <div className="instructor-top-user">
@@ -293,7 +303,9 @@ export default function InstructorApp() {
             </div>
           )}
 
-          {activeView === "programs" ? (
+          {activeView === "cohorts" ? (
+            <MyCohorts />
+          ) : activeView === "programs" ? (
             <MyPrograms
               onManageCurriculum={(program) => {
                 setSelectedProgram(program);

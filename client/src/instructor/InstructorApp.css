@@ -1141,3 +1141,81 @@
   overflow-wrap: anywhere;
   line-height: 1.7;
 }
+.instructor-cohorts {
+  width: 100%;
+}
+
+.instructor-cohorts .instructor-programs-header h1 {
+  margin: 10px 0;
+  font-family: Georgia, serif;
+  font-size: clamp(30px, 4vw, 42px);
+  font-weight: 500;
+  letter-spacing: -0.05em;
+}
+
+.instructor-cohorts .instructor-program-card .instructor-primary-button {
+  width: 100%;
+  margin-top: 18px;
+}
+
+.instructor-cohort-facts {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 20px;
+  padding: 22px;
+}
+
+.instructor-cohort-facts > div {
+  min-width: 0;
+}
+
+.instructor-cohort-facts span,
+.instructor-cohort-facts strong {
+  display: block;
+}
+
+.instructor-cohort-facts span {
+  margin-bottom: 7px;
+  color: var(--in-muted);
+  font-size: 10px;
+}
+
+.instructor-cohort-facts strong {
+  overflow-wrap: anywhere;
+  font-size: 12px;
+  line-height: 1.6;
+}
+
+.instructor-cohort-notes {
+  padding: 22px;
+  border-top: 1px solid var(--in-line);
+}
+
+.instructor-cohort-notes h3 {
+  margin: 0 0 16px;
+  font-family: Georgia, serif;
+  font-size: 19px;
+  font-weight: 500;
+}
+
+.instructor-cohort-notes article {
+  padding: 14px 0;
+  border-top: 1px solid var(--in-line);
+}
+
+.instructor-cohort-notes article > strong {
+  font-size: 11px;
+}
+
+.instructor-cohort-notes article p {
+  color: var(--in-muted);
+  font-size: 11px;
+}
+
+@media (max-width: 760px) {
+  .instructor-cohort-facts {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    padding: 17px;
+    gap: 18px 12px;
+  }
+}
