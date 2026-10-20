@@ -598,7 +598,18 @@ router.patch("/:id", requireSameOrigin, requireAdmin, async (req, res) => {
     }
 
     // Validate the selected instructor whenever one is assigned.
-    if (nextInstructorId != null) {
+    // Validate the instructor when the assignment changes or
+    // when the cohort must have an active instructor.
+    const instructorAssignmentChanged =
+      input.instructorId !== undefined &&
+      input.instructorId !== existing.instructorId;
+
+    const requiresActiveInstructor =
+      instructorAssignmentChanged ||
+      nextStatus === "OPEN" ||
+      nextStatus === "IN_PROGRESS";
+
+    if (nextInstructorId != null && requiresActiveInstructor) {
       const instructorCheck = await validateInstructor(nextInstructorId);
 
       if (!instructorCheck.valid) {
@@ -610,7 +621,6 @@ router.patch("/:id", requireSameOrigin, requireAdmin, async (req, res) => {
         );
       }
     }
-
     const updateData = { ...input };
 
     if (input.startDate !== undefined) {

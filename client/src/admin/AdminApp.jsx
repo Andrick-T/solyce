@@ -2045,13 +2045,36 @@ export default function AdminApp() {
                 }
               >
                 <option value="">Select an active instructor</option>
-                {instructors
-                  .filter((instructor) => instructor.isActive)
-                  .map((instructor) => (
-                    <option key={instructor.id} value={instructor.id}>
-                      {instructor.fullName} · {instructor.email}
-                    </option>
-                  ))}
+
+                {(() => {
+                  const assignedInstructor = instructors.find(
+                    (instructor) =>
+                      String(instructor.id) ===
+                      String(cohortModal.form.instructorId),
+                  );
+
+                  return (
+                    <>
+                      {assignedInstructor && !assignedInstructor.isActive && (
+                        <option value={String(assignedInstructor.id)}>
+                          {assignedInstructor.fullName} · Inactive (existing
+                          assignment)
+                        </option>
+                      )}
+
+                      {instructors
+                        .filter((instructor) => instructor.isActive)
+                        .map((instructor) => (
+                          <option
+                            key={instructor.id}
+                            value={String(instructor.id)}
+                          >
+                            {instructor.fullName} · {instructor.email}
+                          </option>
+                        ))}
+                    </>
+                  );
+                })()}
               </select>
             </Field>
             <Field label="Start date">
