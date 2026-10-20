@@ -2,18 +2,38 @@ import { useCallback, useEffect, useState } from "react";
 
 const apiBase = (import.meta.env.VITE_API_BASE_URL || "").replace(/\/$/, "");
 
-async function request(path) {
+const ATTENDANCE_STATUSES = [
+  { value: "PRESENT", label: "Present" },
+  { value: "ABSENT", label: "Absent" },
+  { value: "LATE", label: "Late" },
+  { value: "EXCUSED", label: "Excused" },
+];
+
+const MEETING_PROVIDERS = [
+  { value: "GOOGLE_MEET", label: "Google Meet" },
+  { value: "ZOOM", label: "Zoom" },
+  { value: "WHATSAPP", label: "WhatsApp video" },
+];
+
+async function request(path, options = {}) {
   const response = await fetch(`${apiBase}/api/instructor${path}`, {
     credentials: "include",
+    ...options,
+    headers: {
+      ...(options.body ? { "Content-Type": "application/json" } : {}),
+      ...options.headers,
+    },
   });
 
   const body = await response.json().catch(() => ({}));
 
   if (!response.ok) {
-    throw new Error(body?.error?.message || "Unable to load cohort data.");
+    throw new Error(
+      body?.error?.message || "The request could not be completed.",
+    );
   }
 
-  return body?.data;
+  return body?.data ?? body;
 }
 
 function formatDate(value, includeTime = false) {
@@ -35,6 +55,295 @@ function label(value) {
     .replaceAll("_", " ")
     .toLowerCase()
     .replace(/^./, (character) => character.toUpperCase());
+}
+
+function validMeetingUrl(value) {
+  try {
+    const url = new URL(value);
+    return url.protocol === "https:" || url.protocol === "http:";
+  } catch {
+    return false;
+  }
+}
+
+function MeetingEditor({ session, onSaved }) {
+  const [provider, setProvider] = useState(session.meetingProvider || "");
+  const [url, setUrl] = useState(session.meetingUrl || "");
+  const [saving, setSaving] = useState(false);
+  const [message, setMessage] = useState("");
+  const [error, setError] = useState("");
+
+  useEffect(() => {
+    setProvider(session.meetingProvider || "");
+    setUrl(session.meetingUrl || "");
+  }, [session.meetingProvider, session.meetingUrl]);
+
+  async function saveMeeting(event) {
+    event.preventDefault();
+    setMessage("");
+    setError("");
+
+    const normalizedUrl = url.trim();
+
+    if ((provider && !normalizedUrl) || (!provider && normalizedUrl)) {
+      setError(
+        "Select a meeting platform and provide its link, or clear both.",
+      );
+      return;
+    }
+
+    if (normalizedUrl && !validMeetingUrl(normalizedUrl)) {
+      setError("Enter a valid HTTP or HTTPS meeting URL.");
+      return;
+    }
+
+    setSaving(true);
+
+    try {
+      await request(`/sessions/${session.id}/meeting`, {
+        method: "PATCH",
+        body: JSON.stringify({
+          meetingProvider: provider || null,
+          meetingUrl: normalizedUrl || null,
+        }),
+      });
+
+      setMessage("Meeting details saved.");
+      onSaved(session.id, provider || null, normalizedUrl || null);
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  return (
+    <form className="instructor-meeting-form" onSubmit={saveMeeting}>
+      <h4>Online meeting</h4>
+
+      <label>
+        Meeting platform
+        <select
+          value={provider}
+          onChange={(event) => setProvider(event.target.value)}
+          disabled={saving}
+        >
+          <option value="">Not configured</option>
+          {MEETING_PROVIDERS.map((item) => (
+            <option key={item.value} value={item.value}>
+              {item.label}
+            </option>
+          ))}
+        </select>
+      </label>
+
+      <label>
+        Meeting URL
+        <input
+          type="url"
+          value={url}
+          onChange={(event) => setUrl(event.target.value)}
+          placeholder="https://..."
+          maxLength={2048}
+          disabled={saving}
+        />
+      </label>
+
+      {error && (
+        <p className="instructor-alert" role="alert">
+          {error}
+        </p>
+      )}
+      {message && <p role="status">{message}</p>}
+
+      <div className="instructor-meeting-actions">
+        <button
+          type="submit"
+          className="instructor-primary-button"
+          disabled={saving}
+        >
+          {saving ? "Saving…" : "Save meeting details"}
+        </button>
+
+        {url && validMeetingUrl(url) && (
+          <a href={url} target="_blank" rel="noreferrer">
+            Open meeting link ↗
+          </a>
+        )}
+      </div>
+    </form>
+  );
+}
+
+function AttendanceEditor({ session }) {
+  const [attendance, setAttendance] = useState(null);
+  const [loading, setLoading] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState("");
+  const [message, setMessage] = useState("");
+
+  async function loadAttendance() {
+    setLoading(true);
+    setError("");
+    setMessage("");
+
+    try {
+      const data = await request(`/sessions/${session.id}/attendance`);
+      setAttendance(data);
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  function updateRecord(enrollmentId, field, value) {
+    setAttendance((current) => {
+      if (!current) return current;
+
+      return {
+        ...current,
+        students: current.students.map((student) =>
+          student.enrollmentId === enrollmentId
+            ? { ...student, [field]: value }
+            : student,
+        ),
+      };
+    });
+  }
+
+  async function saveAttendance(event) {
+    event.preventDefault();
+    if (!attendance) return;
+
+    setSaving(true);
+    setError("");
+    setMessage("");
+
+    try {
+      const records = attendance.students.map((student) => ({
+        enrollmentId: student.enrollmentId,
+        status: student.status || "PRESENT",
+        note: student.note?.trim() || null,
+      }));
+
+      await request(`/sessions/${session.id}/attendance`, {
+        method: "PUT",
+        body: JSON.stringify({ records }),
+      });
+
+      setMessage("Attendance saved successfully.");
+      await loadAttendance();
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  return (
+    <section className="instructor-attendance">
+      <div className="instructor-attendance-heading">
+        <h4>Student attendance</h4>
+        <button
+          type="button"
+          className="instructor-secondary-button"
+          onClick={loadAttendance}
+          disabled={loading || saving}
+        >
+          {loading
+            ? "Loading…"
+            : attendance
+              ? "Refresh attendance"
+              : "Manage attendance"}
+        </button>
+      </div>
+
+      {error && (
+        <div className="instructor-alert" role="alert">
+          {error}
+        </div>
+      )}
+      {message && <p role="status">{message}</p>}
+
+      {attendance && (
+        <form onSubmit={saveAttendance}>
+          {!attendance.students?.length ? (
+            <p>No confirmed students are registered for this lesson.</p>
+          ) : (
+            <>
+              <div className="instructor-table-wrap">
+                <table className="instructor-table">
+                  <thead>
+                    <tr>
+                      <th>STUDENT</th>
+                      <th>ATTENDANCE</th>
+                      <th>NOTE</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {attendance.students.map((student) => (
+                      <tr key={student.enrollmentId}>
+                        <td>
+                          <strong>{student.fullName || "Student"}</strong>
+                          <span>{student.email || student.phone || "—"}</span>
+                        </td>
+                        <td>
+                          <select
+                            value={student.status || "PRESENT"}
+                            onChange={(event) =>
+                              updateRecord(
+                                student.enrollmentId,
+                                "status",
+                                event.target.value,
+                              )
+                            }
+                            disabled={saving}
+                            aria-label={`Attendance for ${student.fullName || "student"}`}
+                          >
+                            {ATTENDANCE_STATUSES.map((status) => (
+                              <option key={status.value} value={status.value}>
+                                {status.label}
+                              </option>
+                            ))}
+                          </select>
+                        </td>
+                        <td>
+                          <input
+                            type="text"
+                            value={student.note || ""}
+                            maxLength={500}
+                            placeholder="Optional note"
+                            onChange={(event) =>
+                              updateRecord(
+                                student.enrollmentId,
+                                "note",
+                                event.target.value,
+                              )
+                            }
+                            disabled={saving}
+                            aria-label={`Attendance note for ${student.fullName || "student"}`}
+                          />
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+
+              <button
+                type="submit"
+                className="instructor-primary-button"
+                disabled={saving || loading}
+              >
+                {saving ? "Saving attendance…" : "Save attendance"}
+              </button>
+            </>
+          )}
+        </form>
+      )}
+    </section>
+  );
 }
 
 export default function MyCohorts() {
@@ -76,6 +385,21 @@ export default function MyCohorts() {
     }
   }
 
+  function updateMeeting(sessionId, meetingProvider, meetingUrl) {
+    setSelected((current) => {
+      if (!current) return current;
+
+      return {
+        ...current,
+        scheduledLessons: current.scheduledLessons.map((session) =>
+          session.id === sessionId
+            ? { ...session, meetingProvider, meetingUrl }
+            : session,
+        ),
+      };
+    });
+  }
+
   return (
     <section className="instructor-cohorts">
       <header className="instructor-programs-header">
@@ -83,8 +407,8 @@ export default function MyCohorts() {
           <p className="instructor-eyebrow">TEACHING MANAGEMENT</p>
           <h1>{selected ? selected.name : "My cohorts"}</h1>
           <p className="instructor-programs-intro">
-            View your assigned classes, follow student registrations and prepare
-            for upcoming lessons.
+            Manage your assigned classes, online meeting links and student
+            attendance.
           </p>
         </div>
 
@@ -291,66 +615,46 @@ export default function MyCohorts() {
               <div className="instructor-empty">
                 <h3>No lessons scheduled yet</h3>
                 <p>
-                  Scheduled lessons will appear here when they are added to this
+                  Lessons will appear here once they are scheduled for this
                   cohort.
                 </p>
               </div>
             ) : (
-              <div className="instructor-table-wrap">
-                <table className="instructor-table">
-                  <thead>
-                    <tr>
-                      <th>DATE & TIME</th>
-                      <th>LESSON</th>
-                      <th>MODULE</th>
-                      <th>STATUS</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {selected.scheduledLessons.map((session) => (
-                      <tr key={session.id}>
-                        <td>
-                          <strong>
-                            {formatDate(session.scheduledAt, true)}
-                          </strong>
-                          <span>
-                            Until {formatDate(session.scheduledEndAt, true)}
-                          </span>
-                        </td>
-                        <td>
-                          <strong>{session.lesson?.title || "Lesson"}</strong>
-                          <span>
-                            {session.lesson?.description || "No description"}
-                          </span>
-                        </td>
-                        <td>{session.lesson?.module?.title || "—"}</td>
-                        <td>
-                          <span className="instructor-status">
-                            {label(session.status)}
-                          </span>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            )}
+              <div className="instructor-sessions-list">
+                {selected.scheduledLessons.map((session) => (
+                  <article className="instructor-session-card" key={session.id}>
+                    <div className="instructor-session-summary">
+                      <div>
+                        <p className="instructor-eyebrow">
+                          {formatDate(session.scheduledAt, true)}
+                        </p>
+                        <h3>{session.lesson?.title || "Lesson"}</h3>
+                        <p>
+                          {session.lesson?.module?.title ||
+                            "No module specified"}
+                        </p>
+                        <p>{session.lesson?.description || "No description"}</p>
+                        <p>
+                          Ends: {formatDate(session.scheduledEndAt, true)}
+                          {" · "}
+                          {label(session.status)}
+                        </p>
+                      </div>
+                    </div>
 
-            {selected.scheduledLessons?.some(
-              (session) => session.instructorNotes,
-            ) && (
-              <div className="instructor-cohort-notes">
-                <h3>Instructor notes</h3>
-                {selected.scheduledLessons
-                  .filter((session) => session.instructorNotes)
-                  .map((session) => (
-                    <article key={session.id}>
-                      <strong>{session.lesson?.title || "Lesson"}</strong>
-                      <p className="instructor-preserved-content">
-                        {session.instructorNotes}
-                      </p>
-                    </article>
-                  ))}
+                    {session.instructorNotes && (
+                      <div className="instructor-cohort-notes">
+                        <h4>Instructor notes</h4>
+                        <p className="instructor-preserved-content">
+                          {session.instructorNotes}
+                        </p>
+                      </div>
+                    )}
+
+                    <MeetingEditor session={session} onSaved={updateMeeting} />
+                    <AttendanceEditor session={session} />
+                  </article>
+                ))}
               </div>
             )}
           </section>
