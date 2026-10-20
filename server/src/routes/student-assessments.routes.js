@@ -567,6 +567,68 @@ router.post(
   },
 );
 
+/**
+ * List the current student's assessment attempts.
+ * Only attempts belonging to the authenticated student are returned.
+ */
+router.get("/attempts", async (req, res) => {
+  try {
+    const attempts = await prisma.assessmentAttempt.findMany({
+      where: {
+        enrollment: {
+          userId: req.student.id,
+          status: "CONFIRMED",
+        },
+      },
+      orderBy: [{ assessmentId: "asc" }, { attemptNumber: "desc" }],
+      select: {
+        id: true,
+        assessmentId: true,
+        attemptNumber: true,
+        status: true,
+        score: true,
+        startedAt: true,
+        submittedAt: true,
+        gradedAt: true,
+        assessment: {
+          select: {
+            id: true,
+            title: true,
+            assessmentType: true,
+            maxScore: true,
+            passingScore: true,
+            dueAt: true,
+            timeLimitMinutes: true,
+          },
+        },
+      },
+    });
+
+    return res.json({
+      data: attempts.map((attempt) => ({
+        id: attempt.id,
+        assessmentId: attempt.assessmentId,
+        attemptNumber: attempt.attemptNumber,
+        status: attempt.status,
+        score: attempt.status === "GRADED" ? attempt.score : null,
+        startedAt: attempt.startedAt,
+        submittedAt: attempt.submittedAt,
+        gradedAt: attempt.gradedAt,
+        assessment: attempt.assessment,
+      })),
+    });
+  } catch (error) {
+    console.error("Loading assessment history failed:", error.message);
+
+    return fail(
+      res,
+      500,
+      "INTERNAL_SERVER_ERROR",
+      "Unable to load your assessment history.",
+    );
+  }
+});
+
 // View the student's own attempt and result.
 router.get("/attempts/:attemptId", async (req, res) => {
   const attemptId = Number(req.params.attemptId);

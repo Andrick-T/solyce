@@ -184,12 +184,11 @@ export default function StudentAssessments() {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
   const [notice, setNotice] = useState("");
-  const [clockNow, setClockNow] = useState(Date.now());
+  const [clockNow, setClockNow] = useState(0);
+  const [attempts, setAttempts] = useState([]);
 
   useEffect(() => {
     if (!active) return undefined;
-
-    setClockNow(Date.now());
 
     const intervalId = window.setInterval(() => {
       setClockNow(Date.now());
@@ -203,9 +202,13 @@ export default function StudentAssessments() {
     setError("");
 
     try {
-      // request() already returns body.data, which is the sessions array.
-      const data = await request("/api/student/learning");
-      setSessions(Array.isArray(data) ? data : []);
+      const [learningData, attemptData] = await Promise.all([
+        request("/api/student/learning"),
+        request("/api/student/assessments/attempts"),
+      ]);
+
+      setSessions(Array.isArray(learningData) ? learningData : []);
+      setAttempts(Array.isArray(attemptData) ? attemptData : []);
     } catch (err) {
       setError(err.message);
     } finally {
@@ -228,6 +231,15 @@ export default function StudentAssessments() {
       cohortName: session.cohort?.name || "Cohort",
     })),
   );
+  const latestAttempts = new Map();
+
+  for (const attempt of attempts) {
+    const current = latestAttempts.get(attempt.assessmentId);
+
+    if (!current || attempt.attemptNumber > current.attemptNumber) {
+      latestAttempts.set(attempt.assessmentId, attempt);
+    }
+  }
 
   async function startAssessment(assessment) {
     setBusy(true);
@@ -609,39 +621,94 @@ export default function StudentAssessments() {
             </p>
           </div>
         ) : (
-          assessments.map((assessment) => (
-            <article
-              className="student-record"
-              key={`${assessment.sessionId}-${assessment.id}`}
-            >
-              <div>
-                <strong>{assessment.title}</strong>
+          assessments.map((assessment) => {
+            const latestAttempt = latestAttempts.get(assessment.id);
+            const isInProgress = latestAttempt?.status === "IN_PROGRESS";
+            const isGraded = latestAttempt?.status === "GRADED";
 
-                <span>
-                  {assessment.courseTitle} · {assessment.cohortName}
-                </span>
+            return (
+              <article
+                className="student-record"
+                key={`${assessment.sessionId}-${assessment.id}`}
+              >
+                <div>
+                  <strong>{assessment.title}</strong>
 
-                <small>
-                  {label(assessment.assessmentType)} ·{" "}
-                  {label(assessment.releasePhase)} ·{" "}
-                  {assessment.dueAt
-                    ? `Due ${formatDate(assessment.dueAt)}`
-                    : "No deadline specified"}
-                </small>
-              </div>
+                  <span>
+                    {assessment.courseTitle} · {assessment.cohortName}
+                  </span>
 
-              <div className="student-assessment-list-actions">
-                <button
-                  type="button"
-                  className="student-text-button"
-                  disabled={busy}
-                  onClick={() => startAssessment(assessment)}
-                >
-                  Start / resume
-                </button>
-              </div>
-            </article>
-          ))
+                  <small>
+                    {label(assessment.assessmentType)} ·{" "}
+                    {label(assessment.releasePhase)} ·{" "}
+                    {assessment.dueAt
+                      ? `Due ${formatDate(assessment.dueAt)}`
+                      : "No deadline specified"}
+                  </small>
+
+                  {assessment.timeLimitMinutes > 0 && (
+                    <small>
+                      Time limit: {assessment.timeLimitMinutes} minutes
+                    </small>
+                  )}
+
+                  {latestAttempt && (
+                    <small>
+                      Latest attempt #{latestAttempt.attemptNumber}:{" "}
+                      {label(latestAttempt.status)}
+                      {latestAttempt.submittedAt
+                        ? ` · Submitted ${formatDate(latestAttempt.submittedAt)}`
+                        : ""}
+                      {isGraded && latestAttempt.score != null
+                        ? ` · Score ${latestAttempt.score}${
+                            latestAttempt.assessment?.maxScore != null
+                              ? ` / ${latestAttempt.assessment.maxScore}`
+                              : ""
+                          }`
+                        : ""}
+                    </small>
+                  )}
+                </div>
+
+                <div className="student-assessment-list-actions">
+                  {latestAttempt && !isInProgress && (
+                    <button
+                      type="button"
+                      className="student-text-button"
+                      disabled={busy}
+                      onClick={async () => {
+                        setBusy(true);
+                        setError("");
+
+                        try {
+                          await viewResult(latestAttempt.id);
+                        } catch (err) {
+                          setError(err.message);
+                        } finally {
+                          setBusy(false);
+                        }
+                      }}
+                    >
+                      View result
+                    </button>
+                  )}
+
+                  <button
+                    type="button"
+                    className="student-text-button"
+                    disabled={busy}
+                    onClick={() => startAssessment(assessment)}
+                  >
+                    {isInProgress
+                      ? "Resume attempt"
+                      : latestAttempt
+                        ? "Start another attempt"
+                        : "Start assessment"}
+                  </button>
+                </div>
+              </article>
+            );
+          })
         )}
       </div>
     </section>
