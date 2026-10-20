@@ -299,7 +299,7 @@ export default function AdminApp() {
       const [courseResult, cohortResult, instructorResult] = await Promise.all([
         request("/admin/courses"),
         request("/admin/cohorts"),
-        request("/admin/instructors"),
+        request("/admin/instructors?includeInactive=true"),
       ]);
       setCourses(courseResult.data || []);
       setCohorts(cohortResult.data || []);
@@ -533,6 +533,39 @@ export default function AdminApp() {
       setError(err.message);
     } finally {
       setSaving(false);
+    }
+  }
+  async function toggleInstructorStatus(instructor) {
+    const nextStatus = !instructor.isActive;
+    const action = nextStatus ? "activate" : "deactivate";
+
+    const confirmed = window.confirm(
+      `Are you sure you want to ${action} ${instructor.fullName}'s account?`,
+    );
+
+    if (!confirmed) return;
+
+    setRecordBusy(`instructor-${instructor.id}`);
+    setError("");
+
+    try {
+      await request(`/admin/instructors/${instructor.id}/status`, {
+        method: "PATCH",
+        headers: { Origin: window.location.origin },
+        body: JSON.stringify({ isActive: nextStatus }),
+      });
+
+      await loadData();
+
+      flash(
+        nextStatus
+          ? "Instructor account activated."
+          : "Instructor account deactivated.",
+      );
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setRecordBusy(null);
     }
   }
   async function saveInstructor(event) {
@@ -1289,7 +1322,9 @@ export default function AdminApp() {
                     <thead>
                       <tr>
                         <th>Instructor</th>
+                        <th>Status</th>
                         <th>Assigned cohorts</th>
+                        <th>Access</th>
                       </tr>
                     </thead>
 
@@ -1315,6 +1350,39 @@ export default function AdminApp() {
                               </div>
                             </td>
                             <td>{assignedCount}</td>
+                            <td>
+                              <span
+                                className="table-secondary"
+                                aria-label={`Account status: ${
+                                  instructor.isActive ? "Active" : "Inactive"
+                                }`}
+                              >
+                                {instructor.isActive ? "Active" : "Inactive"}
+                              </span>
+                            </td>
+
+                            <td>{assignedCount}</td>
+
+                            <td>
+                              <button
+                                type="button"
+                                className={`admin-button small ${
+                                  instructor.isActive ? "subtle" : "primary"
+                                }`}
+                                disabled={
+                                  recordBusy === `instructor-${instructor.id}`
+                                }
+                                onClick={() =>
+                                  toggleInstructorStatus(instructor)
+                                }
+                              >
+                                {recordBusy === `instructor-${instructor.id}`
+                                  ? "Saving…"
+                                  : instructor.isActive
+                                    ? "Deactivate"
+                                    : "Activate"}
+                              </button>
+                            </td>
                           </tr>
                         );
                       })}
@@ -1977,11 +2045,13 @@ export default function AdminApp() {
                 }
               >
                 <option value="">Select an active instructor</option>
-                {instructors.map((i) => (
-                  <option key={i.id} value={i.id}>
-                    {i.fullName} · {i.email}
-                  </option>
-                ))}
+                {instructors
+                  .filter((instructor) => instructor.isActive)
+                  .map((instructor) => (
+                    <option key={instructor.id} value={instructor.id}>
+                      {instructor.fullName} · {instructor.email}
+                    </option>
+                  ))}
               </select>
             </Field>
             <Field label="Start date">

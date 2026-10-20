@@ -7,14 +7,23 @@ import { requireSameOrigin } from "../middleware/require-same-origin.js";
 const router = Router();
 
 // List active instructors available for cohort assignment.
-router.get("/", requireAdmin, async (_req, res) => {
+// List active instructors by default.
+// Administrators can request inactive accounts for account management.
+router.get("/", requireAdmin, async (req, res) => {
   try {
+    const includeInactive = req.query.includeInactive === "true";
+
     const data = await prisma.user.findMany({
-      where: { role: "INSTRUCTOR", isActive: true },
+      where: {
+        role: "INSTRUCTOR",
+        ...(includeInactive ? {} : { isActive: true }),
+      },
       select: {
         id: true,
         fullName: true,
         email: true,
+        isActive: true,
+        createdAt: true,
       },
       orderBy: { fullName: "asc" },
     });
@@ -31,6 +40,95 @@ router.get("/", requireAdmin, async (_req, res) => {
     });
   }
 });
+
+// Activate or deactivate an instructor without deleting account history.
+router.patch(
+  "/:id/status",
+  requireSameOrigin,
+  requireAdmin,
+  async (req, res) => {
+    const id = Number(req.params.id);
+    const { isActive } = req.body || {};
+
+    if (!Number.isSafeInteger(id) || id < 1 || typeof isActive !== "boolean") {
+      return res.status(400).json({
+        error: {
+          code: "INVALID_INSTRUCTOR_STATUS",
+          message: "Provide a valid instructor ID and status.",
+        },
+      });
+    }
+
+    try {
+      const instructor = await prisma.user.findFirst({
+        where: { id, role: "INSTRUCTOR" },
+        select: {
+          id: true,
+          fullName: true,
+          email: true,
+          isActive: true,
+        },
+      });
+
+      if (!instructor) {
+        return res.status(404).json({
+          error: {
+            code: "INSTRUCTOR_NOT_FOUND",
+            message: "Instructor account not found.",
+          },
+        });
+      }
+
+      if (instructor.isActive === isActive) {
+        return res.status(200).json({ data: instructor });
+      }
+
+      if (!isActive) {
+        const assignedCohort = await prisma.cohort.findFirst({
+          where: {
+            instructorId: id,
+            status: { in: ["OPEN", "IN_PROGRESS"] },
+          },
+          select: { id: true, name: true },
+        });
+
+        if (assignedCohort) {
+          return res.status(409).json({
+            error: {
+              code: "INSTRUCTOR_HAS_ACTIVE_COHORT",
+              message:
+                "Reassign or close all open or in-progress cohorts assigned to this instructor before deactivating the account.",
+            },
+          });
+        }
+      }
+
+      const updated = await prisma.user.update({
+        where: { id },
+        data: { isActive },
+        select: {
+          id: true,
+          fullName: true,
+          email: true,
+          role: true,
+          isActive: true,
+          createdAt: true,
+        },
+      });
+
+      return res.status(200).json({ data: updated });
+    } catch (error) {
+      console.error("Admin instructor status update failed:", error.message);
+
+      return res.status(500).json({
+        error: {
+          code: "INTERNAL_SERVER_ERROR",
+          message: "Unable to update instructor status.",
+        },
+      });
+    }
+  },
+);
 
 // Create an active instructor account.
 router.post("/", requireSameOrigin, requireAdmin, async (req, res) => {
