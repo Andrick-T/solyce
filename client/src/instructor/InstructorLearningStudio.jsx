@@ -74,6 +74,7 @@ export default function InstructorLearningStudio({ program, onBack }) {
   const [notice, setNotice] = useState("");
   const [moduleFormOpen, setModuleFormOpen] = useState(false);
   const [lessonFormOpen, setLessonFormOpen] = useState(false);
+  const [lessonViewOpen, setLessonViewOpen] = useState(false);
 
   const loadCurriculum = useCallback(async () => {
     setLoading(true);
@@ -208,8 +209,14 @@ export default function InstructorLearningStudio({ program, onBack }) {
   }
 
   async function startEditLesson(lesson) {
+    if (!canEdit) {
+      await viewLesson(lesson);
+      return;
+    }
+
     setError("");
     setNotice("");
+    setLessonViewOpen(false);
 
     try {
       const result = await request(`/lessons/${lesson.id}`);
@@ -228,6 +235,34 @@ export default function InstructorLearningStudio({ program, onBack }) {
       setEditingLessonId(lesson.id);
       setSelectedLessonId(lesson.id);
       setLessonFormOpen(true);
+    } catch (err) {
+      setError(getErrorMessage(err));
+    }
+  }
+
+  async function viewLesson(lesson) {
+    setError("");
+    setNotice("");
+    setLessonFormOpen(false);
+    setEditingLessonId(null);
+    setLessonViewOpen(false);
+
+    try {
+      const result = await request(`/lessons/${lesson.id}`);
+      const details = result.data ?? result.lesson ?? result;
+
+      setLessonForm({
+        title: details.title ?? "",
+        description: details.description ?? "",
+        objectives: details.objectives ?? "",
+        preparationContent: details.preparationContent ?? "",
+        content: details.content ?? "",
+        estimatedMinutes: details.estimatedMinutes ?? 30,
+        position: details.position ?? 1,
+      });
+
+      setSelectedLessonId(lesson.id);
+      setLessonViewOpen(true);
     } catch (err) {
       setError(getErrorMessage(err));
     }
@@ -288,6 +323,7 @@ export default function InstructorLearningStudio({ program, onBack }) {
     setSelectedModuleId(module.id);
     setSelectedLessonId(null);
     setLessonFormOpen(false);
+    setLessonViewOpen(false);
     setEditingLessonId(null);
     setError("");
     setNotice("");
@@ -583,6 +619,67 @@ export default function InstructorLearningStudio({ program, onBack }) {
                       </article>
                     ))}
                   </div>
+                )}
+
+                {lessonViewOpen && !canEdit && (
+                  <article className="instructor-program-form instructor-studio-form">
+                    <div className="instructor-panel-heading">
+                      <div>
+                        <p className="instructor-eyebrow">LESSON DETAILS</p>
+                        <h3>{lessonForm.title || "Untitled lesson"}</h3>
+                      </div>
+
+                      <button
+                        type="button"
+                        className="instructor-secondary-button"
+                        onClick={() => setLessonViewOpen(false)}
+                      >
+                        Close
+                      </button>
+                    </div>
+
+                    <p className="instructor-muted">
+                      {lessonForm.estimatedMinutes} minutes
+                    </p>
+
+                    {lessonForm.description && (
+                      <section>
+                        <h4>Description</h4>
+                        <p>{lessonForm.description}</p>
+                      </section>
+                    )}
+
+                    {lessonForm.objectives && (
+                      <section>
+                        <h4>Learning objectives</h4>
+                        <p className="instructor-preserved-content">
+                          {lessonForm.objectives}
+                        </p>
+                      </section>
+                    )}
+
+                    {lessonForm.preparationContent && (
+                      <section>
+                        <h4>Preparation</h4>
+                        <p className="instructor-preserved-content">
+                          {lessonForm.preparationContent}
+                        </p>
+                      </section>
+                    )}
+
+                    {lessonForm.content ? (
+                      <section>
+                        <h4>Lesson content</h4>
+                        <div className="instructor-preserved-content">
+                          {lessonForm.content}
+                        </div>
+                      </section>
+                    ) : (
+                      <p className="instructor-muted">
+                        No lesson content has been added yet.
+                      </p>
+                    )}
+                  </article>
                 )}
 
                 {lessonFormOpen && canEdit && (

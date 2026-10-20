@@ -1048,7 +1048,9 @@ export default function AdminApp() {
                                   updateCourseApproval(c, "REJECTED")
                                 }
                               >
-                                Reject
+                                {recordBusy === `course-${c.id}`
+                                  ? "Saving…"
+                                  : "Reject"}
                               </button>
                             </>
                           )}

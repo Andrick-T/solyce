@@ -264,7 +264,7 @@ router.patch(
         },
         data: {
           approvalStatus: parsed.data.status,
-          ...(parsed.data.status === "REJECTED" ? { isPublished: false } : {}),
+          isPublished: false,
         },
       });
 

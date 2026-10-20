@@ -1136,3 +1136,8 @@
     justify-content: flex-start;
   }
 }
+.instructor-preserved-content {
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  line-height: 1.7;
+}
