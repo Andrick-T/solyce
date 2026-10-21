@@ -197,7 +197,11 @@ function BookingForm({ course, cohort, onClose }) {
       booking.reference || booking.bookingReference || booking.enrollment?.id;
 
     return (
-      <div className="booking-panel" role="status">
+      <div
+        className="booking-panel booking-success"
+        role="status"
+        aria-live="polite"
+      >
         <p className="booking-eyebrow">BOOKING RECEIVED</p>
         <h3>Your next chapter starts here.</h3>
         <p>
@@ -285,9 +289,10 @@ function BookingForm({ course, cohort, onClose }) {
       </label>
 
       {error && (
-        <p className="booking-error" role="alert">
-          {error}
-        </p>
+        <div className="booking-error" role="alert" aria-live="assertive">
+          <strong>Booking unsuccessful</strong>
+          <p>{error}</p>
+        </div>
       )}
 
       <button

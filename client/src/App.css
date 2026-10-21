@@ -2317,3 +2317,78 @@
     transform: none;
   }
 }
+
+/* Booking feedback — accessible status cards */
+
+.booking-error {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  margin: 16px 0;
+  padding: 14px 16px;
+  border: 1px solid #e9c9c3;
+  border-left: 3px solid #b65345;
+  border-radius: 4px;
+  color: #843b31;
+  background: #fbefec;
+  font-size: 12px;
+  line-height: 1.7;
+}
+
+.booking-error strong {
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.booking-error p {
+  margin: 0;
+  color: #843b31;
+  font-size: 12px;
+  line-height: 1.7;
+  overflow-wrap: anywhere;
+}
+
+.booking-success {
+  padding: 25px;
+  border: 1px solid #d4e2c8;
+  border-top: 3px solid #64834d;
+  border-radius: 5px;
+  background: #f4f8ef;
+}
+
+.booking-success .booking-eyebrow {
+  color: #52713f;
+}
+
+.booking-success h3 {
+  color: #273b27;
+}
+
+.booking-success > p {
+  color: #52634d;
+  line-height: 1.8;
+}
+
+.booking-success .booking-reference {
+  margin: 18px 0;
+  padding: 14px;
+  border: 1px solid #dce6d3;
+  border-radius: 4px;
+  background: #fff;
+}
+
+.booking-error:focus,
+.booking-success:focus {
+  outline: 2px solid #75834f;
+  outline-offset: 3px;
+}
+
+@media (max-width: 480px) {
+  .booking-success {
+    padding: 19px;
+  }
+
+  .booking-error {
+    padding: 12px;
+  }
+}
