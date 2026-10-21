@@ -2117,3 +2117,49 @@
     transform: none;
   }
 }
+
+/* Closing section — clearer calls to action */
+
+.closing-copy {
+  position: relative;
+  z-index: 1;
+}
+
+.closing-buttons {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 18px;
+}
+
+.closing-contact-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  color: #f0f1e7;
+  font-size: 11px;
+  font-weight: 600;
+  text-decoration: none;
+  transition: color 160ms ease;
+}
+
+.closing-contact-link:hover {
+  color: #bdc9a8;
+}
+
+.closing-contact-link .arrow-icon {
+  width: 15px;
+  height: 15px;
+}
+
+.closing-contact-link:focus-visible {
+  outline: 2px solid #bdc9a8;
+  outline-offset: 5px;
+}
+
+@media (max-width: 760px) {
+  .closing-buttons {
+    align-items: flex-start;
+    gap: 17px;
+  }
+}

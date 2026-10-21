@@ -692,35 +692,38 @@ function App() {
               <div className="principles-intro">
                 <span className="section-kicker">THE SOLYCE DIFFERENCE</span>
                 <h2>
-                  Not just more learning.
+                  Learn with purpose.
                   <br />
-                  <span>More intentional learning.</span>
+                  <span>Grow with guidance.</span>
                 </h2>
               </div>
 
               <div className="principles-grid">
                 <article className="principle">
-                  <span className="principle-number">01 / CLARITY</span>
-                  <h3>Know your direction.</h3>
+                  <span className="principle-number">01 / GUIDANCE</span>
+                  <h3>Learn with an instructor.</h3>
                   <p>
-                    Start with a clear objective and a learning path designed
-                    around what you want to achieve.
+                    Build your language skills through live classes led by an
+                    instructor, with guidance throughout your learning journey.
                   </p>
                 </article>
+
                 <article className="principle">
-                  <span className="principle-number">02 / PRACTICE</span>
-                  <h3>Build through doing.</h3>
+                  <span className="principle-number">02 / COMMUNITY</span>
+                  <h3>Learn in a small group.</h3>
                   <p>
-                    Turn knowledge into usable skills through deliberate
-                    practice and structured progression.
+                    Join a class of up to eight learners and practise alongside
+                    others working toward their language goals.
                   </p>
                 </article>
+
                 <article className="principle">
-                  <span className="principle-number">03 / PROGRESS</span>
-                  <h3>See the difference.</h3>
+                  <span className="principle-number">03 / PURPOSE</span>
+                  <h3>Move toward your goal.</h3>
                   <p>
-                    Develop confidence through meaningful milestones and focused
-                    preparation.
+                    Choose a language program built around a clear objective,
+                    whether you are preparing for an exam or strengthening your
+                    communication skills.
                   </p>
                 </article>
               </div>
@@ -888,28 +891,42 @@ function App() {
 
           <section className="closing-section" id="about">
             <div className="container closing-layout">
-              <div>
+              <div className="closing-copy">
                 <span className="section-kicker">
                   YOUR NEXT CHAPTER STARTS HERE
                 </span>
+
                 <h2>
-                  Give your ambition
+                  Your goals.
                   <br />
-                  <span>a clear direction.</span>
+                  <span>Your next step.</span>
                 </h2>
               </div>
+
               <div className="closing-action">
                 <p>
-                  Tell us what you want to achieve. Let's explore the right
-                  learning path for you.
+                  Tell us what you want to achieve. Explore our language
+                  programs or talk to our team to find the right starting point.
                 </p>
-                <a
-                  className="button button-light"
-                  href="mailto:hello@solyce.com?subject=Let's%20talk%20about%20Solyce"
-                >
-                  Start a conversation <ArrowIcon diagonal />
-                </a>
+
+                <div className="closing-buttons">
+                  <a
+                    className="button button-light"
+                    href="#programs"
+                    onClick={showCatalogue}
+                  >
+                    Explore programs <ArrowIcon />
+                  </a>
+
+                  <a
+                    className="closing-contact-link"
+                    href="mailto:hello@solyce.com?subject=Let's%20talk%20about%20Solyce"
+                  >
+                    Talk to our team <ArrowIcon diagonal />
+                  </a>
+                </div>
               </div>
+
               <span className="closing-watermark" aria-hidden="true">
                 S.
               </span>
