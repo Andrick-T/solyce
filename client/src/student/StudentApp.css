@@ -290,19 +290,6 @@
   margin: 0 auto;
   padding: 37px clamp(24px, 4vw, 55px) 30px;
 }
-.student-welcome {
-  position: relative;
-  display: grid;
-  min-height: 300px;
-  grid-template-columns: 1.1fr 0.9fr;
-  overflow: hidden;
-  background: #1c2923;
-  color: #fff;
-}
-.student-welcome > div:first-child {
-  z-index: 1;
-  padding: 34px 0 32px 37px;
-}
 .student-eyebrow {
   display: flex;
   align-items: center;
@@ -317,37 +304,6 @@
   width: 17px;
   height: 1px;
   background: #b9ca87;
-}
-.student-welcome .student-eyebrow {
-  color: #c6d0bc;
-}
-.student-welcome h1,
-.student-page-heading h1 {
-  margin: 18px 0 0;
-  font-family: var(--heading);
-  font-size: clamp(34px, 3.3vw, 48px);
-  font-weight: 500;
-  letter-spacing: -0.065em;
-  line-height: 1.13;
-}
-.student-welcome h1 em {
-  color: var(--st-green);
-  font-family: var(--serif);
-  font-weight: 400;
-}
-.student-welcome-copy {
-  max-width: 410px;
-  margin: 16px 0 0;
-  color: #c3cbc0;
-  font-size: 10px;
-  line-height: 1.9;
-}
-.student-welcome-actions {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 17px;
-  margin-top: 22px;
 }
 .student-primary-button {
   display: inline-flex;
@@ -373,19 +329,6 @@
 }
 .student-text-button span {
   padding-left: 7px;
-}
-.student-welcome-art {
-  position: relative;
-  display: grid;
-  min-height: 260px;
-  place-items: center;
-  overflow: hidden;
-  background: radial-gradient(
-    ellipse at 52% 50%,
-    #45533b 0,
-    #2b392d 44%,
-    #1c2923 76%
-  );
 }
 .student-art-ring {
   position: absolute;
@@ -734,12 +677,6 @@
   .student-topbar {
     padding-inline: 25px;
   }
-  .student-welcome > div:first-child {
-    padding-left: 27px;
-  }
-  .student-welcome h1 {
-    font-size: 38px;
-  }
   .student-stat-grid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
@@ -795,21 +732,6 @@
   }
   .student-content {
     padding: 20px 15px 25px;
-  }
-  .student-welcome {
-    grid-template-columns: 1fr;
-  }
-  .student-welcome > div:first-child {
-    padding: 27px 23px 22px;
-  }
-  .student-welcome h1 {
-    font-size: 39px;
-  }
-  .student-welcome-copy {
-    max-width: 430px;
-  }
-  .student-welcome-art {
-    min-height: 210px;
   }
   .student-art-core {
     width: 93px;
@@ -888,9 +810,6 @@
   }
 }
 @media (max-width: 360px) {
-  .student-welcome h1 {
-    font-size: 34px;
-  }
   .student-stat-card {
     padding: 10px;
   }
@@ -899,9 +818,6 @@
   }
   .student-stat-icon {
     display: none;
-  }
-  .student-welcome-actions {
-    gap: 12px;
   }
   .student-primary-button {
     gap: 10px;
@@ -1232,4 +1148,137 @@
     padding: 12px;
     font-size: 12px;
   }
+}
+
+.student-welcome {
+  display: flex;
+  min-height: 0;
+  overflow: hidden;
+  padding: clamp(24px, 3vw, 36px);
+  border: 1px solid #29372d;
+  background: #1c2923;
+  color: #fff;
+}
+
+.student-welcome > div:first-child {
+  width: 100%;
+  min-width: 0;
+}
+
+.student-welcome .student-eyebrow {
+  color: #c6d0bc;
+}
+
+.student-welcome h1 {
+  margin: 16px 0 0;
+  font-family: var(--heading);
+  font-size: clamp(30px, 3vw, 42px);
+  font-weight: 500;
+  letter-spacing: -0.055em;
+  line-height: 1.15;
+  overflow-wrap: anywhere;
+}
+
+.student-welcome h1 em {
+  color: var(--st-green);
+  font-family: var(--serif);
+  font-weight: 400;
+}
+
+.student-welcome-copy {
+  max-width: 520px;
+  margin: 12px 0 0;
+  color: #c3cbc0;
+  font-size: 13px;
+  line-height: 1.7;
+}
+
+.student-welcome-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 12px;
+  margin-top: 20px;
+}
+
+.student-dashboard-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1.2fr) minmax(0, 0.8fr);
+  gap: 16px;
+  margin-top: 22px;
+  align-items: stretch;
+}
+
+.student-program-panel,
+.student-agenda-panel {
+  min-width: 0;
+  min-height: 0;
+  padding: 22px;
+}
+
+.student-panel-heading {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+
+.student-panel-heading > div {
+  min-width: 0;
+}
+
+.student-panel-heading h2 {
+  margin: 7px 0 0;
+  font-family: var(--heading);
+  font-size: 19px;
+  font-weight: 600;
+  letter-spacing: -0.035em;
+  line-height: 1.3;
+}
+
+.student-inline-link {
+  flex-shrink: 0;
+  padding: 8px 0 8px 8px;
+  border: 0;
+  color: #536a39;
+  background: transparent;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.student-inline-link:disabled {
+  cursor: wait;
+  opacity: 0.6;
+}
+
+.student-welcome {
+  padding: 24px 20px;
+}
+
+.student-welcome h1 {
+  font-size: clamp(30px, 8vw, 38px);
+}
+
+.student-welcome-copy {
+  font-size: 13px;
+}
+
+.student-dashboard-grid {
+  grid-template-columns: minmax(0, 1fr);
+  gap: 12px;
+  margin-top: 14px;
+}
+
+.student-program-panel,
+.student-agenda-panel {
+  padding: 18px 16px;
+}
+
+.student-panel-heading h2 {
+  font-size: 18px;
+}
+
+.student-empty {
+  min-height: 145px;
 }

@@ -787,16 +787,15 @@ export default function StudentApp() {
               <section className="student-welcome">
                 <div>
                   <p className="student-eyebrow">
-                    <span /> YOUR NEXT CHAPTER
+                    <span /> YOUR LEARNING SPACE
                   </p>
                   <h1>
-                    Make progress,
+                    Welcome back,
                     <br />
-                    <em>one step at a time.</em>
+                    <em>{user.fullName}.</em>
                   </h1>
                   <p className="student-welcome-copy">
-                    Welcome, {user.fullName}. Your student space shows
-                    information linked to your account.
+                    Find your enrolments and keep track of your cohort dates.
                   </p>
                   <div className="student-welcome-actions">
                     <button
@@ -804,71 +803,10 @@ export default function StudentApp() {
                       className="student-primary-button"
                       onClick={() => navigate("courses")}
                     >
-                      Explore my learning <span>↗</span>
-                    </button>
-                    <button
-                      type="button"
-                      className="student-text-button"
-                      onClick={() => navigate("payments")}
-                    >
-                      View payments <span>→</span>
+                      My learning <span>→</span>
                     </button>
                   </div>
                 </div>
-                <div className="student-welcome-art">
-                  <div className="student-art-ring ring-one" />
-                  <div className="student-art-ring ring-two" />
-                  <div className="student-art-core">
-                    S<span>.</span>
-                  </div>
-                  <span className="student-art-label art-label-one">
-                    01 / CLARITY
-                  </span>
-                  <span className="student-art-label art-label-two">
-                    02 / PRACTICE
-                  </span>
-                  <span className="student-art-label art-label-three">
-                    03 / PROGRESS
-                  </span>
-                  <span className="student-art-cross">+</span>
-                </div>
-              </section>
-              <section
-                className="student-stat-grid"
-                aria-label="Learning overview"
-              >
-                <article className="student-stat-card">
-                  <div className="student-stat-top">
-                    <span>LINKED ENROLMENTS</span>
-                    <span className="student-stat-icon">▤</span>
-                  </div>
-                  <strong>{enrollments.length}</strong>
-                  <p>Records connected to your account</p>
-                </article>
-                <article className="student-stat-card">
-                  <div className="student-stat-top">
-                    <span>ACTIVE PROGRAMS</span>
-                    <span className="student-stat-icon">↗</span>
-                  </div>
-                  <strong>{activeCount}</strong>
-                  <p>Enrolments not cancelled or waitlisted</p>
-                </article>
-                <article className="student-stat-card">
-                  <div className="student-stat-top">
-                    <span>PAYMENT RECORDS</span>
-                    <span className="student-stat-icon">◇</span>
-                  </div>
-                  <strong>{paymentRows.length}</strong>
-                  <p>Actual records from linked enrolments</p>
-                </article>
-                <article className="student-stat-card">
-                  <div className="student-stat-top">
-                    <span>TO-DO</span>
-                    <span className="student-stat-icon">✓</span>
-                  </div>
-                  <strong>—</strong>
-                  <p>Assignment tools are not available yet</p>
-                </article>
               </section>
               <section className="student-dashboard-grid">
                 <div className="student-panel student-program-panel">
@@ -915,7 +853,6 @@ export default function StudentApp() {
                       <p className="student-eyebrow">KEEP ON TRACK</p>
                       <h2>Next cohort dates</h2>
                     </div>
-                    {refreshButton}
                   </div>
                   {enrollments.length ? (
                     enrollments.slice(0, 4).map((e) => (
@@ -936,36 +873,6 @@ export default function StudentApp() {
                       exists. Live session scheduling is not yet available.
                     </EmptyState>
                   )}
-                </div>
-              </section>
-              <section className="student-bottom-grid">
-                <div className="student-tip-card">
-                  <div className="student-tip-mark">✳</div>
-                  <div>
-                    <p className="student-eyebrow">THE SOLYCE METHOD</p>
-                    <h2>
-                      Small, consistent steps
-                      <br />
-                      create meaningful progress.
-                    </h2>
-                    <p>
-                      Return regularly, practise deliberately and keep your
-                      learning goals in sight.
-                    </p>
-                  </div>
-                  <span className="student-tip-index">01 — 03</span>
-                </div>
-                <div className="student-panel student-quick-panel">
-                  <p className="student-eyebrow">QUICK ACCESS</p>
-                  <button type="button" onClick={() => navigate("courses")}>
-                    <span>▧</span> My enrolments <b>→</b>
-                  </button>
-                  <button type="button" onClick={() => navigate("payments")}>
-                    <span>◇</span> Payment details <b>→</b>
-                  </button>
-                  <button type="button" onClick={() => navigate("profile")}>
-                    <span>○</span> My profile <b>→</b>
-                  </button>
                 </div>
               </section>
             </>
