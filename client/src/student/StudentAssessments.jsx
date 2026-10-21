@@ -67,7 +67,7 @@ function label(value) {
   return String(value || "")
     .replaceAll("_", " ")
     .toLowerCase()
-    .replace(/^\\w/, (character) => character.toUpperCase());
+    .replace(/^\w/, (character) => character.toUpperCase());
 }
 
 function optionsFor(question) {
@@ -184,7 +184,7 @@ export default function StudentAssessments() {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
   const [notice, setNotice] = useState("");
-  const [clockNow, setClockNow] = useState(0);
+  const [clockNow, setClockNow] = useState(() => Date.now());
   const [attempts, setAttempts] = useState([]);
 
   useEffect(() => {
@@ -385,6 +385,8 @@ export default function StudentAssessments() {
           : "Your assessment has been submitted for correction.",
       );
 
+      await loadLearning();
+
       try {
         await viewResult(response.attempt.id);
       } catch (resultError) {
@@ -393,8 +395,6 @@ export default function StudentAssessments() {
           `Your assessment was submitted, but its result could not be loaded: ${resultError.message}`,
         );
       }
-
-      await loadLearning();
     } catch (err) {
       setError(err.message);
     } finally {

@@ -72,6 +72,7 @@ export default function InstructorLearningStudio({ program, onBack }) {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
+  const [loadError, setLoadError] = useState("");
   const [notice, setNotice] = useState("");
   const [moduleFormOpen, setModuleFormOpen] = useState(false);
   const [lessonFormOpen, setLessonFormOpen] = useState(false);
@@ -82,6 +83,8 @@ export default function InstructorLearningStudio({ program, onBack }) {
       const result = await request(
         `/modules?courseId=${encodeURIComponent(program.id)}`,
       );
+
+      setLoadError("");
       setError("");
 
       const resultCourse = result.course ?? program;
@@ -108,7 +111,7 @@ export default function InstructorLearningStudio({ program, onBack }) {
         return nextModules[0]?.id ?? null;
       });
     } catch (err) {
-      setError(getErrorMessage(err));
+      setLoadError(getErrorMessage(err));
     } finally {
       setLoading(false);
     }
@@ -403,8 +406,25 @@ export default function InstructorLearningStudio({ program, onBack }) {
       </div>
 
       {loading ? (
-        <div className="instructor-empty">
+        <div className="instructor-empty" role="status" aria-live="polite">
           <p>Loading curriculum…</p>
+        </div>
+      ) : loadError ? (
+        <div className="instructor-empty">
+          <h3>Unable to load your curriculum</h3>
+          <p>{loadError}</p>
+          <button
+            type="button"
+            className="instructor-secondary-button"
+            onClick={() => {
+              setLoading(true);
+              setLoadError("");
+              loadCurriculum();
+            }}
+            disabled={loading}
+          >
+            Try again ↻
+          </button>
         </div>
       ) : (
         <div className="instructor-studio-layout">
