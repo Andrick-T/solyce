@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+﻿import { useEffect, useMemo, useState } from "react";
 import "./App.css";
 
 const API_BASE_URL = (
@@ -263,7 +263,7 @@ function BookingForm({ course, cohort, onClose }) {
         type="submit"
         disabled={submitting}
       >
-        {submitting ? "Submitting…" : "Submit booking"}
+        {submitting ? "Submittingâ€¦" : "Submit booking"}
         {!submitting && <ArrowIcon />}
       </button>
 
@@ -286,7 +286,7 @@ function CourseDetail({ course, onBack }) {
     <main className="detail-page">
       <div className="container">
         <button className="back-link" type="button" onClick={onBack}>
-          <span aria-hidden="true">←</span> Back to programs
+          <span aria-hidden="true">â†</span> Back to programs
         </button>
 
         <section className="detail-hero">
@@ -352,7 +352,7 @@ function CourseDetail({ course, onBack }) {
                   </span>
                   <span>{item}</span>
                   <span className="curriculum-check" aria-hidden="true">
-                    ↗
+                    â†—
                   </span>
                 </li>
               ))}
@@ -383,7 +383,7 @@ function CourseDetail({ course, onBack }) {
                     <span className="cohort-label">{cohort.name}</span>
                     <h3>{formatDate(cohort.startDate)}</h3>
                     <p>
-                      Ends {formatDate(cohort.endDate)} ·{" "}
+                      Ends {formatDate(cohort.endDate)} Â·{" "}
                       {cohort.scheduleDescription}
                     </p>
                   </div>
@@ -406,7 +406,7 @@ function CourseDetail({ course, onBack }) {
           ) : (
             <div className="availability-panel">
               <div className="availability-icon" aria-hidden="true">
-                ↗
+                â†—
               </div>
               <div>
                 <h3>Upcoming dates are being prepared.</h3>
@@ -591,12 +591,12 @@ function App() {
                     Discover our programs <ArrowIcon />
                   </a>
                   <a className="text-link" href="#approach">
-                    The Solyce approach <span>↓</span>
+                    The Solyce approach <span>â†“</span>
                   </a>
                 </div>
 
                 <div className="hero-footnote">
-                  <span className="footnote-mark">✳</span>
+                  <span className="footnote-mark">âœ³</span>
                   <span>Purposeful learning. Meaningful progress.</span>
                 </div>
               </div>
@@ -605,9 +605,16 @@ function App() {
                 className="hero-visual"
                 aria-label="Solyce learning philosophy"
               >
+                <img
+                  className="hero-photo"
+                  src="https://images.unsplash.com/photo-1523240795612-9a054b0db644?auto=format&fit=crop&w=1200&q=80"
+                  alt=""
+                  loading="eager"
+                  fetchPriority="high"
+                />
                 <div className="visual-topline">
                   <span>THE SOLYCE METHOD</span>
-                  <span>01 — 03</span>
+                  <span>01 â€” 03</span>
                 </div>
 
                 <div className="visual-composition">
@@ -643,7 +650,7 @@ function App() {
             <div className="hero-bottom container">
               <span>EDUCATION, WITH INTENTION.</span>
               <a href="#programs">
-                Explore the catalogue <span>↓</span>
+                Explore the catalogue <span>â†“</span>
               </a>
             </div>
           </section>
@@ -761,7 +768,7 @@ function App() {
               {loading ? (
                 <div className="catalogue-status" role="status">
                   <span className="loading-spinner" />
-                  <p>Preparing your catalogue…</p>
+                  <p>Preparing your catalogueâ€¦</p>
                 </div>
               ) : error ? (
                 <div className="catalogue-status status-error" role="alert">
@@ -801,7 +808,7 @@ function App() {
                 </>
               ) : courses.length > 0 ? (
                 <div className="catalogue-status">
-                  <span className="status-symbol">⌕</span>
+                  <span className="status-symbol">âŒ•</span>
                   <h3>No matching programs.</h3>
                   <p>Try another search or select a different language.</p>
                   <button
@@ -910,7 +917,7 @@ function App() {
           </div>
 
           <div className="footer-note">
-            <span className="footer-note-mark">✳</span>
+            <span className="footer-note-mark">âœ³</span>
             <p>
               Every next chapter
               <br />
@@ -920,7 +927,7 @@ function App() {
         </div>
 
         <div className="container footer-bottom">
-          <span>© {new Date().getFullYear()} Solyce. All rights reserved.</span>
+          <span>Â© {new Date().getFullYear()} Solyce. All rights reserved.</span>
           <span>Built around your next chapter.</span>
         </div>
       </footer>
@@ -929,3 +936,4 @@ function App() {
 }
 
 export default App;
+

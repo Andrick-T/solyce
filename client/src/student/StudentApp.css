@@ -1167,3 +1167,69 @@
     font-size: 12px;
   }
 }
+
+/* Phase 5 — Accessible feedback cards */
+.student-auth-card .student-alert,
+.student-auth-card .student-notice {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  margin: 0 0 20px;
+  padding: 14px 16px;
+  border: 1px solid;
+  border-left-width: 4px;
+  border-radius: 6px;
+  font-size: 13px;
+  line-height: 1.65;
+  overflow-wrap: anywhere;
+}
+
+.student-auth-card .student-alert {
+  border-color: #f0c5c0;
+  border-left-color: #c24136;
+  background: #fff1f0;
+  color: #8f241b;
+}
+
+.student-auth-card .student-notice {
+  border-color: #b9dfc5;
+  border-left-color: #25834a;
+  background: #effaf2;
+  color: #176536;
+}
+
+.student-auth-card .student-alert::before {
+  content: "!";
+  display: inline-grid;
+  flex: 0 0 21px;
+  width: 21px;
+  height: 21px;
+  place-items: center;
+  border-radius: 50%;
+  background: #f8d9d5;
+  color: #8f241b;
+  font-size: 13px;
+  font-weight: 800;
+}
+
+.student-auth-card .student-notice::before {
+  content: "✓";
+  display: inline-grid;
+  flex: 0 0 21px;
+  width: 21px;
+  height: 21px;
+  place-items: center;
+  border-radius: 50%;
+  background: #d2f0da;
+  color: #176536;
+  font-size: 13px;
+  font-weight: 800;
+}
+
+@media (max-width: 480px) {
+  .student-auth-card .student-alert,
+  .student-auth-card .student-notice {
+    padding: 12px;
+    font-size: 12px;
+  }
+}
