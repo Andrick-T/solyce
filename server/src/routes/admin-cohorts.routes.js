@@ -38,6 +38,45 @@ const dateOnlySchema = z
 
 const deadlineSchema = z.string().datetime({ offset: true }).nullable();
 
+const SOLYCE_DAYS = [
+  "Monday",
+  "Tuesday",
+  "Wednesday",
+  "Thursday",
+  "Friday",
+  "Saturday",
+  "Sunday",
+];
+
+const SOLYCE_TIME_SLOTS = ["09:00-10:30", "11:00-12:30", "19:00-20:30"];
+
+const scheduleDescriptionSchema = z
+  .string()
+  .trim()
+  .min(3)
+  .max(255)
+  .refine(
+    (value) => {
+      const parts = value.split(" | ");
+
+      if (parts.length !== 2) return false;
+
+      const [daysText, timeSlot] = parts;
+      const days = daysText.split(", ").map((day) => day.trim());
+
+      return (
+        days.length > 0 &&
+        days.every((day) => SOLYCE_DAYS.includes(day)) &&
+        new Set(days).size === days.length &&
+        SOLYCE_TIME_SLOTS.includes(timeSlot)
+      );
+    },
+    {
+      message:
+        "Choose valid learning days and one of the three Solyce class time slots.",
+    },
+  );
+
 const createSchema = z
   .object({
     name: z.string().trim().min(2).max(150),
@@ -46,7 +85,7 @@ const createSchema = z
     startDate: dateOnlySchema,
     endDate: dateOnlySchema,
     enrollmentDeadline: deadlineSchema.optional(),
-    scheduleDescription: z.string().trim().min(3).max(255),
+    scheduleDescription: scheduleDescriptionSchema,
     timezone: z.string().trim().min(1).max(50).default("Africa/Douala"),
     capacity: z.number().int().min(1).max(8).default(8),
     minimumStudents: z.number().int().min(1).max(8).default(6),
@@ -62,7 +101,7 @@ const updateSchema = z
     startDate: dateOnlySchema.optional(),
     endDate: dateOnlySchema.optional(),
     enrollmentDeadline: deadlineSchema.optional(),
-    scheduleDescription: z.string().trim().min(3).max(255).optional(),
+    scheduleDescription: scheduleDescriptionSchema.optional(),
     timezone: z.string().trim().min(1).max(50).optional(),
     capacity: z.number().int().min(1).max(8).optional(),
     minimumStudents: z.number().int().min(1).max(8).optional(),

@@ -1173,3 +1173,34 @@
     width: 100%;
   }
 }
+
+.admin-cohort-days {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.admin-cohort-day {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 9px 11px;
+  border: 1px solid #dedfd6;
+  border-radius: 6px;
+  background: #fff;
+  color: #424d42;
+  font-size: 11px;
+  cursor: pointer;
+}
+
+.admin-cohort-day input {
+  width: 15px;
+  height: 15px;
+  margin: 0;
+  accent-color: #50683d;
+}
+
+.admin-cohort-day span {
+  font-size: 11px;
+  font-weight: 500;
+}

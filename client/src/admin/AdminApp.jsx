@@ -36,12 +36,51 @@ const initialCohort = {
   endDate: "",
   enrollmentDeadline: "",
   scheduleDescription: "",
+  scheduleDays: [],
+  scheduleSlot: "",
   timezone: "Africa/Douala",
   capacity: 8,
   minimumStudents: 6,
   priceXaf: "",
   status: "DRAFT",
 };
+
+const SOLYCE_DAYS = [
+  "Monday",
+  "Tuesday",
+  "Wednesday",
+  "Thursday",
+  "Friday",
+  "Saturday",
+  "Sunday",
+];
+
+const SOLYCE_TIME_SLOTS = [
+  { value: "09:00-10:30", label: "09:00–10:30" },
+  { value: "11:00-12:30", label: "11:00–12:30" },
+  { value: "19:00-20:30", label: "19:00–20:30" },
+];
+
+function parseScheduleDescription(value = "") {
+  const parts = value.split(" | ");
+
+  if (parts.length !== 2) {
+    return { scheduleDays: [], scheduleSlot: "" };
+  }
+
+  const scheduleDays = parts[0].split(", ").map((day) => day.trim());
+  const scheduleSlot = parts[1];
+
+  const valid =
+    scheduleDays.length > 0 &&
+    scheduleDays.every((day) => SOLYCE_DAYS.includes(day)) &&
+    new Set(scheduleDays).size === scheduleDays.length &&
+    SOLYCE_TIME_SLOTS.some((slot) => slot.value === scheduleSlot);
+
+  return valid
+    ? { scheduleDays, scheduleSlot }
+    : { scheduleDays: [], scheduleSlot: "" };
+}
 
 async function request(path, options = {}) {
   const response = await fetch(`${API}${path}`, {
@@ -501,8 +540,32 @@ export default function AdminApp() {
     setSaving(true);
     setError("");
     const f = cohortModal.form;
+
+    if (!f.scheduleDays?.length) {
+      setError("Select at least one learning day.");
+      setSaving(false);
+      return;
+    }
+
+    if (!f.scheduleSlot) {
+      setError("Select a Solyce class time slot.");
+      setSaving(false);
+      return;
+    }
+
+    if (["OPEN", "IN_PROGRESS"].includes(f.status) && !f.instructorId) {
+      setError(
+        "Assign an active instructor before opening or starting a cohort.",
+      );
+      setSaving(false);
+      return;
+    }
+
+    const { scheduleDays, scheduleSlot, ...cohortFields } = f;
+
     const data = {
-      ...f,
+      ...cohortFields,
+      scheduleDescription: `${scheduleDays.join(", ")} | ${scheduleSlot}`,
       courseId: Number(f.courseId),
       instructorId: f.instructorId ? Number(f.instructorId) : null,
       capacity: Number(f.capacity),
@@ -635,6 +698,7 @@ export default function AdminApp() {
               ? new Date(cohort.enrollmentDeadline).toISOString().slice(0, 16)
               : "",
             scheduleDescription: cohort.scheduleDescription,
+            ...parseScheduleDescription(cohort.scheduleDescription),
             timezone: cohort.timezone || "Africa/Douala",
             capacity: cohort.capacity,
             minimumStudents: cohort.minimumStudents,
@@ -2115,25 +2179,65 @@ export default function AdminApp() {
                 }
               />
             </Field>
-            <Field label="Schedule">
-              <input
+
+            <Field label="Learning days" wide>
+              <div className="admin-cohort-days">
+                {SOLYCE_DAYS.map((day) => (
+                  <label key={day} className="admin-cohort-day">
+                    <input
+                      type="checkbox"
+                      checked={cohortModal.form.scheduleDays.includes(day)}
+                      onChange={(event) =>
+                        setCohortModal((current) => ({
+                          ...current,
+                          form: {
+                            ...current.form,
+                            scheduleDays: event.target.checked
+                              ? [...current.form.scheduleDays, day]
+                              : current.form.scheduleDays.filter(
+                                  (selectedDay) => selectedDay !== day,
+                                ),
+                          },
+                        }))
+                      }
+                      disabled={saving}
+                    />
+                    <span>{day}</span>
+                  </label>
+                ))}
+              </div>
+            </Field>
+
+            <Field label="Class time slot">
+              <select
                 required
-                maxLength="255"
-                value={cohortModal.form.scheduleDescription}
-                onChange={(e) =>
-                  setCohortModal((m) => ({
-                    ...m,
-                    form: { ...m.form, scheduleDescription: e.target.value },
+                value={cohortModal.form.scheduleSlot}
+                onChange={(event) =>
+                  setCohortModal((current) => ({
+                    ...current,
+                    form: {
+                      ...current.form,
+                      scheduleSlot: event.target.value,
+                    },
                   }))
                 }
-                placeholder="Mon, Wed, Fri · 5–7 PM"
-              />
+                disabled={saving}
+              >
+                <option value="">Select a time slot</option>
+                {SOLYCE_TIME_SLOTS.map((slot) => (
+                  <option key={slot.value} value={slot.value}>
+                    {slot.label}
+                  </option>
+                ))}
+              </select>
+              <small>All times use the Africa/Douala timezone.</small>
             </Field>
+
             <Field label="Capacity">
               <input
                 type="number"
                 min="1"
-                max="500"
+                max="8"
                 required
                 value={cohortModal.form.capacity}
                 onChange={(e) =>
@@ -2148,7 +2252,7 @@ export default function AdminApp() {
               <input
                 type="number"
                 min="1"
-                max="500"
+                max="8"
                 required
                 value={cohortModal.form.minimumStudents}
                 onChange={(e) =>
