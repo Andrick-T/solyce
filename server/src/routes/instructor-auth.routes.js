@@ -3,6 +3,7 @@ import argon2 from "argon2";
 import { z } from "zod";
 import { prisma } from "../db/prisma.js";
 import { requireInstructor } from "../middleware/require-instructor.js";
+import { instructorLoginLimiter } from "../middleware/auth-rate-limit.js";
 
 const router = Router();
 
@@ -46,77 +47,82 @@ function saveSession(session) {
 }
 
 // POST /api/instructor/auth/login
-router.post("/login", rejectUnexpectedOrigin, async (req, res) => {
-  const parsed = loginSchema.safeParse(req.body);
+router.post(
+  "/login",
+  instructorLoginLimiter,
+  rejectUnexpectedOrigin,
+  async (req, res) => {
+    const parsed = loginSchema.safeParse(req.body);
 
-  if (!parsed.success) {
-    return res.status(400).json({
-      error: {
-        code: "INVALID_CREDENTIALS_FORMAT",
-        message: "Please provide a valid email and password.",
-      },
-    });
-  }
-
-  try {
-    const user = await prisma.user.findUnique({
-      where: { email: parsed.data.email.toLowerCase() },
-    });
-
-    if (!user || !user.isActive || user.role !== "INSTRUCTOR") {
-      return res.status(401).json({
+    if (!parsed.success) {
+      return res.status(400).json({
         error: {
-          code: "INVALID_LOGIN",
-          message: "Invalid email or password.",
+          code: "INVALID_CREDENTIALS_FORMAT",
+          message: "Please provide a valid email and password.",
         },
       });
     }
-
-    let passwordMatches = false;
 
     try {
-      passwordMatches = await argon2.verify(
-        user.passwordHash,
-        parsed.data.password,
-      );
-    } catch {
-      // Invalid stored hashes are treated as failed logins.
-    }
+      const user = await prisma.user.findUnique({
+        where: { email: parsed.data.email.toLowerCase() },
+      });
 
-    if (!passwordMatches) {
-      return res.status(401).json({
+      if (!user || !user.isActive || user.role !== "INSTRUCTOR") {
+        return res.status(401).json({
+          error: {
+            code: "INVALID_LOGIN",
+            message: "Invalid email or password.",
+          },
+        });
+      }
+
+      let passwordMatches = false;
+
+      try {
+        passwordMatches = await argon2.verify(
+          user.passwordHash,
+          parsed.data.password,
+        );
+      } catch {
+        // Invalid stored hashes are treated as failed logins.
+      }
+
+      if (!passwordMatches) {
+        return res.status(401).json({
+          error: {
+            code: "INVALID_LOGIN",
+            message: "Invalid email or password.",
+          },
+        });
+      }
+
+      await regenerateSession(req.session);
+      req.session.userId = user.id;
+      await saveSession(req.session);
+
+      return res.status(200).json({
+        data: {
+          user: {
+            id: user.id,
+            email: user.email,
+            fullName: user.fullName,
+            role: user.role,
+          },
+        },
+      });
+    } catch (error) {
+      console.error("Instructor login failed:", error.message);
+
+      return res.status(500).json({
         error: {
-          code: "INVALID_LOGIN",
-          message: "Invalid email or password.",
+          code: "INTERNAL_SERVER_ERROR",
+          message: "Unable to sign in right now.",
         },
       });
     }
-
-    await regenerateSession(req.session);
-    req.session.userId = user.id;
-    await saveSession(req.session);
-
-    return res.status(200).json({
-      data: {
-        user: {
-          id: user.id,
-          email: user.email,
-          fullName: user.fullName,
-          role: user.role,
-        },
-      },
-    });
-  } catch (error) {
-    console.error("Instructor login failed:", error.message);
-
-    return res.status(500).json({
-      error: {
-        code: "INTERNAL_SERVER_ERROR",
-        message: "Unable to sign in right now.",
-      },
-    });
-  }
-});
+  },
+);
 
 // GET /api/instructor/auth/me
 router.get("/me", requireInstructor, (req, res) => {
