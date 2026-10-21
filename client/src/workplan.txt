@@ -1,0 +1,70 @@
+phase 2 : 2.1 — Gestion des instructeurs
+
+Vérifier et finaliser la liste des instructeurs, leur statut actif/inactif et leur accès aux fonctionnalités qui leur sont destinées.
+
+2.2 — Espace instructeur
+
+Finaliser le parcours de gestion des cours, du curriculum et des soumissions pour approbation, en distinguant clairement les cours modifiables de ceux en attente ou déjà approuvés.
+
+2.3 — Cohortes et planification
+
+Préparer la gestion des cohortes, avec un instructeur obligatoire, une capacité maximale de huit étudiants et les créneaux de cours définis pour Solyce.
+
+2.4 — Administration
+
+Consolider les actions d'approbation, de rejet et de publication séparée, puis assurer leur cohérence avec la gestion des instructeurs et des cohortes. ... plan global: voici ce qu'était notre program initial, restons dessus: Phase 1 — Terminer les corrections déjà demandées
+
+Étape actuelle
+
+Corriger les fonctionnalités déjà engagées sans toucher inutilement à l'architecture.
+
+- Vérifier les corrections de `MyPrograms.jsx` et `InstructorLearningStudio.jsx`.
+- Terminer le workflow d'approbation des programmes.
+- Ajouter les actions d'approbation et de rejet dans l'espace administrateur.
+- Séparer clairement le statut d'approbation du statut de publication.
+- Vérifier les permissions côté serveur et le comportement du curriculum en lecture seule.
+
+## Phase 2 — Terminer les parcours instructeur et administrateur
+
+- Instructeur : créer un programme, modifier son contenu, gérer son curriculum et soumettre le programme à validation.
+- Administrateur : consulter les programmes, approuver ou rejeter les soumissions, gérer les cours et les cohortes.
+- Vérifier que les programmes restent visibles après soumission ou approbation.
+- Vérifier les rôles, les accès interdits et les retours d'erreur.
+
+## Phase 3 — Finaliser le parcours étudiant
+
+- Parcourir le catalogue public et les détails des programmes.
+- Vérifier l'inscription, le choix d'une cohorte et des créneaux disponibles.
+- Vérifier les règles de capacité des classes et l'affectation obligatoire d'un instructeur.
+- Finaliser le suivi des inscriptions et des paiements hors ligne.
+- Vérifier les confirmations et les différents états d'une inscription.
+
+## Phase 4 — Vérifier l'authentification et la sécurité
+
+- Inscription, connexion et réinitialisation du mot de passe.
+- Contrôle des rôles étudiant, instructeur et administrateur.
+- Protection des routes et validation des données côté serveur.
+- Vérification des erreurs API, des sessions ou jetons et des accès non autorisés.
+
+## Phase 5 — Finition de l'interface et de l'expérience utilisateur
+
+- Harmoniser les pages et les composants existants.
+- Corriger les problèmes de responsive design, de navigation et de formulaires.
+- Ajouter des états de chargement, des messages de succès et des erreurs compréhensibles.
+- Vérifier l'affichage sur ordinateur et mobile.
+
+Nous corrigerons les défauts constatés, sans refaire les écrans qui fonctionnent déjà.
+
+## Phase 6 — Tests de bout en bout et stabilisation
+
+- Tester les principaux parcours avec des comptes de chaque rôle.
+- Tester les cas limites : programme rejeté, cohorte complète, paiement en attente, etc.
+- Vérifier les migrations Prisma, la connexion MySQL et les variables d'environnement.
+- Corriger les bugs bloquants et les régressions.
+
+## Phase 7 — Préparation au lancement
+
+- Vérifier les configurations de production du frontend et du backend.
+- Vérifier la base Aiven, les variables secrètes, les URL et les paramètres CORS.
+- Déployer, tester les fonctionnalités sur la version en ligne et corriger les éventuels problèmes.
+- Préparer les données initiales et effectuer une dernière vérification avant ouverture aux utilisateurs.

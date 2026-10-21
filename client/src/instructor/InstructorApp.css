@@ -1219,3 +1219,95 @@
     gap: 18px 12px;
   }
 }
+/* Instructor learning resources and assessments */
+
+.instructor-learning-section {
+  margin-top: 28px;
+  padding-top: 24px;
+  border-top: 1px solid var(--in-line);
+}
+
+.instructor-learning-section > .instructor-panel-heading {
+  align-items: center;
+  gap: 16px;
+  margin-bottom: 18px;
+}
+
+.instructor-learning-field {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+  gap: 8px;
+  margin-bottom: 16px;
+  color: #475044;
+  font-size: 12px;
+  font-weight: 650;
+}
+
+.instructor-learning-field.wide {
+  width: 100%;
+}
+
+.instructor-learning-field input,
+.instructor-learning-field select,
+.instructor-learning-field textarea {
+  box-sizing: border-box;
+  width: 100%;
+  min-width: 0;
+  padding: 12px;
+  border: 1px solid #dfe3d8;
+  border-radius: 2px;
+  outline: none;
+  background: #fff;
+  color: var(--in-ink);
+  font: inherit;
+  font-size: 12px;
+  font-weight: 400;
+}
+
+.instructor-learning-field input:focus,
+.instructor-learning-field select:focus,
+.instructor-learning-field textarea:focus {
+  border-color: #82945a;
+  box-shadow: 0 0 0 3px #82945a1a;
+}
+
+.instructor-learning-field textarea {
+  resize: vertical;
+  line-height: 1.6;
+}
+
+.instructor-learning-content .instructor-studio-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px;
+  margin-top: 18px;
+}
+
+.instructor-learning-content .instructor-studio-lesson a {
+  color: #465143;
+  font-size: 12px;
+  overflow-wrap: anywhere;
+}
+
+.instructor-learning-content .instructor-studio-module-select {
+  flex: 1;
+  text-align: left;
+}
+
+@media (max-width: 640px) {
+  .instructor-learning-section > .instructor-panel-heading {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .instructor-learning-content .instructor-studio-actions {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .instructor-learning-content .instructor-studio-actions button {
+    width: 100%;
+  }
+}

@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useState } from "react";
+import InstructorLearningContent from "./InstructorLearningContent.jsx";
 
 const apiBase = (import.meta.env.VITE_API_BASE_URL || "").replace(/\/$/, "");
 const API_PATH = "/api/instructor/pedagogy";
@@ -616,9 +617,30 @@ export default function InstructorLearningStudio({ program, onBack }) {
                         >
                           {canEdit ? "Edit lesson" : "View lesson"}
                         </button>
+                        <button
+                          type="button"
+                          className="instructor-secondary-button"
+                          onClick={() => {
+                            setSelectedLessonId(lesson.id);
+                            setLessonFormOpen(false);
+                            setLessonViewOpen(false);
+                            setEditingLessonId(null);
+                            setError("");
+                            setNotice("");
+                          }}
+                        >
+                          Resources & assessments
+                        </button>
                       </article>
                     ))}
                   </div>
+                )}
+                {selectedLessonId && !lessonFormOpen && !lessonViewOpen && (
+                  <InstructorLearningContent
+                    key={selectedLessonId}
+                    lessonId={selectedLessonId}
+                    canEdit={canEdit}
+                  />
                 )}
 
                 {lessonViewOpen && !canEdit && (
