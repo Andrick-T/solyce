@@ -751,9 +751,32 @@ function App() {
     });
   }, [courses, search, language]);
 
-  function selectCourse(course) {
-    setSelectedCourse(course);
-    window.scrollTo({ top: 0, behavior: "smooth" });
+  async function selectCourse(course) {
+    setError("");
+
+    try {
+      const response = await fetch(
+        `${API_BASE_URL}/courses/${encodeURIComponent(course.slug)}`,
+      );
+
+      const result = await response.json().catch(() => ({}));
+
+      if (!response.ok || !result.data) {
+        throw new Error(
+          result?.error?.message ||
+            "Unable to load this program's details. Please try again.",
+        );
+      }
+
+      setSelectedCourse(result.data);
+      window.scrollTo({ top: 0, behavior: "smooth" });
+    } catch (err) {
+      setError(
+        err instanceof TypeError
+          ? "Unable to reach Solyce. Please check your connection."
+          : err.message,
+      );
+    }
   }
 
   function showCatalogue() {
