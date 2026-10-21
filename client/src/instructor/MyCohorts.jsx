@@ -216,6 +216,12 @@ function AttendanceEditor({ session }) {
     event.preventDefault();
     if (!attendance) return;
 
+    if (attendance.students.some((student) => !student.status)) {
+      setError("Choose an attendance status for every student before saving.");
+      setMessage("");
+      return;
+    }
+
     setSaving(true);
     setError("");
     setMessage("");
@@ -223,7 +229,7 @@ function AttendanceEditor({ session }) {
     try {
       const records = attendance.students.map((student) => ({
         enrollmentId: student.enrollmentId,
-        status: student.status || "PRESENT",
+        status: student.status,
         note: student.note?.trim() || null,
       }));
 
@@ -232,8 +238,8 @@ function AttendanceEditor({ session }) {
         body: JSON.stringify({ records }),
       });
 
-      setMessage("Attendance saved successfully.");
       await loadAttendance();
+      setMessage("Attendance saved successfully.");
     } catch (err) {
       setError(err.message);
     } finally {
@@ -290,7 +296,7 @@ function AttendanceEditor({ session }) {
                         </td>
                         <td>
                           <select
-                            value={student.status || "PRESENT"}
+                            value={student.status || ""}
                             onChange={(event) =>
                               updateRecord(
                                 student.enrollmentId,
@@ -299,8 +305,10 @@ function AttendanceEditor({ session }) {
                               )
                             }
                             disabled={saving}
+                            required
                             aria-label={`Attendance for ${student.fullName || "student"}`}
                           >
+                            <option value="">Choose status</option>
                             {ATTENDANCE_STATUSES.map((status) => (
                               <option key={status.value} value={status.value}>
                                 {status.label}

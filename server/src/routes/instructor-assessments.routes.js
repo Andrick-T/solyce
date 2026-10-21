@@ -476,8 +476,6 @@ router.patch("/attempts/:id/grade", requireSameOrigin, async (req, res) => {
         return { error: "NOT_GRADEABLE" };
       }
 
-      if (!attempt) return { error: "NOT_GRADEABLE" };
-
       const questions = attempt.assessment.questions;
       let finalScore;
 

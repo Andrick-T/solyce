@@ -127,7 +127,6 @@ export default function InstructorAssessments() {
   async function openAttempt(attempt) {
     setLoadingAttempt(true);
     setError("");
-    setNotice("");
     setSelectedAttempt(null);
     setQuestionScores({});
     setFeedback("");
