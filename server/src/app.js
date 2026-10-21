@@ -6,6 +6,7 @@ import helmet from "helmet";
 import session from "express-session";
 
 import { prisma } from "./db/prisma.js";
+import { sessionStore } from "./db/session-store.js";
 import publicRoutes from "./routes/public.routes.js";
 import adminAuthRoutes from "./routes/admin-auth.routes.js";
 import adminCoursesRoutes from "./routes/admin-courses.routes.js";
@@ -42,7 +43,7 @@ if (!sessionSecret || sessionSecret.length < 32) {
 
 // The default MemoryStore is suitable for local development only.
 // Refuse production startup until a persistent session store is configured.
-if (isProduction) {
+if (isProduction && !sessionStore) {
   throw new Error(
     "Production startup is disabled until a persistent session store is configured.",
   );
@@ -64,6 +65,7 @@ app.use(
   session({
     name: "solyce.sid",
     secret: sessionSecret,
+    store: sessionStore,
     resave: false,
     saveUninitialized: false,
     cookie: {
