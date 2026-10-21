@@ -1349,3 +1349,248 @@
     font-size: 12px;
   }
 }
+/* Instructor dashboard — overview refinement */
+
+.instructor-welcome {
+  position: relative;
+  display: flex;
+  min-height: 280px;
+  align-items: center;
+  overflow: hidden;
+  padding: clamp(26px, 4vw, 44px);
+  border: 1px solid #29372d;
+  background:
+    radial-gradient(
+      ellipse at 100% 0%,
+      rgba(216, 237, 145, 0.12),
+      transparent 48%
+    ),
+    #1c2923;
+  color: #fff;
+}
+
+.instructor-welcome > div:first-child {
+  width: min(100%, 590px);
+  padding: 0;
+}
+
+.instructor-welcome h1 {
+  margin-top: 16px;
+  font-size: clamp(34px, 4vw, 48px);
+  line-height: 1.12;
+  overflow-wrap: anywhere;
+}
+
+.instructor-welcome > div:first-child > p:not(.instructor-eyebrow) {
+  max-width: 470px;
+  margin-top: 14px;
+  font-size: 13px;
+  line-height: 1.8;
+}
+
+.instructor-welcome-caption {
+  display: inline-block;
+  margin-top: 23px;
+  color: #e4e9dc;
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 0.16em;
+}
+
+.instructor-welcome-caption span {
+  padding-inline: 7px;
+  color: var(--in-green);
+}
+
+.instructor-section-heading {
+  align-items: center;
+  margin: 28px 0 16px;
+}
+
+.instructor-section-heading h2 {
+  font-size: clamp(21px, 2vw, 25px);
+}
+
+.instructor-stat-grid {
+  gap: 14px;
+}
+
+.instructor-stat-card {
+  padding: 20px;
+  transition: border-color 160ms ease;
+}
+
+.instructor-stat-card:hover {
+  border-color: #cbd5b9;
+}
+
+.instructor-stat-card > span {
+  display: block;
+  line-height: 1.6;
+}
+
+.instructor-stat-card > strong {
+  margin-top: 19px;
+  font-size: clamp(27px, 3vw, 34px);
+  overflow-wrap: anywhere;
+}
+
+.instructor-panel {
+  margin-top: 22px;
+}
+
+.instructor-panel-heading {
+  padding: 22px 24px;
+}
+
+.instructor-panel-heading h2 {
+  line-height: 1.3;
+}
+
+.instructor-table th {
+  padding-block: 15px;
+}
+
+.instructor-table td {
+  padding-block: 18px;
+}
+
+@media (max-width: 760px) {
+  .instructor-welcome {
+    min-height: 0;
+    padding: 26px 21px;
+  }
+
+  .instructor-welcome h1 {
+    font-size: clamp(32px, 8vw, 40px);
+  }
+
+  .instructor-welcome > div:first-child > p:not(.instructor-eyebrow) {
+    font-size: 12px;
+  }
+
+  .instructor-welcome-caption {
+    margin-top: 19px;
+  }
+
+  .instructor-section-heading {
+    align-items: flex-start;
+    margin-top: 23px;
+  }
+
+  .instructor-stat-grid {
+    gap: 10px;
+  }
+
+  .instructor-stat-card {
+    padding: 15px;
+  }
+
+  .instructor-stat-card > span {
+    font-size: 8px;
+  }
+
+  .instructor-stat-card > strong {
+    margin-top: 13px;
+    font-size: 27px;
+  }
+
+  .instructor-panel-heading {
+    padding: 18px 16px;
+  }
+} /* Instructor hero — integrated photographic background */
+
+.instructor-welcome {
+  position: relative;
+  display: flex;
+  align-items: center;
+  min-height: 320px;
+  overflow: hidden;
+  isolation: isolate;
+  padding: clamp(28px, 4vw, 44px);
+  border: 1px solid #29372d;
+  background-color: #1c2923;
+  background-image:
+    linear-gradient(
+      90deg,
+      #1c2923 0%,
+      rgba(28, 41, 35, 0.97) 28%,
+      rgba(28, 41, 35, 0.78) 50%,
+      rgba(28, 41, 35, 0.2) 100%
+    ),
+    linear-gradient(0deg, rgba(28, 41, 35, 0.35), transparent 55%),
+    var(--instructor-hero-image);
+  background-position:
+    center,
+    center,
+    70% center;
+  background-size: cover;
+  background-repeat: no-repeat;
+  color: #fff;
+}
+
+.instructor-welcome-content {
+  position: relative;
+  z-index: 1;
+  width: min(100%, 560px);
+}
+
+.instructor-welcome h1 {
+  margin-top: 16px;
+  font-size: clamp(34px, 4vw, 48px);
+  line-height: 1.12;
+  overflow-wrap: anywhere;
+}
+
+.instructor-welcome-content > p:not(.instructor-eyebrow) {
+  max-width: 440px;
+  margin-top: 14px;
+  font-size: 13px;
+  line-height: 1.8;
+}
+
+.instructor-welcome-caption {
+  display: inline-block;
+  margin-top: 23px;
+  color: #e4e9dc;
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 0.16em;
+}
+
+.instructor-welcome-caption span {
+  padding-inline: 7px;
+  color: var(--in-green);
+}
+
+@media (max-width: 760px) {
+  .instructor-welcome {
+    min-height: 300px;
+    padding: 26px 21px;
+    background-image:
+      linear-gradient(
+        90deg,
+        rgba(28, 41, 35, 0.96) 0%,
+        rgba(28, 41, 35, 0.82) 58%,
+        rgba(28, 41, 35, 0.48) 100%
+      ),
+      linear-gradient(0deg, rgba(28, 41, 35, 0.5), transparent 70%),
+      var(--instructor-hero-image);
+    background-position:
+      center,
+      center,
+      65% center;
+  }
+
+  .instructor-welcome h1 {
+    font-size: clamp(32px, 8vw, 40px);
+  }
+
+  .instructor-welcome-content > p:not(.instructor-eyebrow) {
+    font-size: 12px;
+  }
+
+  .instructor-welcome-caption {
+    margin-top: 19px;
+  }
+}

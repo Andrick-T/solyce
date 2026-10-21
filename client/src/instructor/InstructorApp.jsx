@@ -338,27 +338,28 @@ export default function InstructorApp() {
             />
           ) : (
             <>
-              <section className="instructor-welcome">
-                <div>
+              <section
+                className="instructor-welcome"
+                style={{
+                  "--instructor-hero-image": 'url("/images/student1.jpg")',
+                }}
+              >
+                <div className="instructor-welcome-content">
                   <p className="instructor-eyebrow">YOUR TEACHING SPACE</p>
+
                   <h1>
                     Welcome back,
                     <br />
-                    <em>{user.fullName.split(" ")[0]}.</em>
+                    <em>{user.fullName.trim().split(/\s+/)[0]}.</em>
                   </h1>
+
                   <p>
-                    Manage your assigned cohorts and follow your students'
-                    learning journey from one workspace.
+                    Manage your assigned cohorts, prepare your lessons and
+                    follow your students' learning journey from one workspace.
                   </p>
-                </div>
-                <div className="instructor-welcome-art" aria-hidden="true">
-                  <div className="instructor-art-ring ring-a" />
-                  <div className="instructor-art-ring ring-b" />
-                  <div className="instructor-art-core">
-                    S<span>.</span>
-                  </div>
-                  <span className="instructor-art-caption">
-                    TEACH · GUIDE · GROW
+
+                  <span className="instructor-welcome-caption">
+                    TEACH <span>·</span> GUIDE <span>·</span> GROW
                   </span>
                 </div>
               </section>
