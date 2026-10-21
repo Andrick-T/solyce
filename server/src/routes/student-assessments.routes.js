@@ -659,7 +659,10 @@ router.get("/attempts/:attemptId", async (req, res) => {
     const attempt = await prisma.assessmentAttempt.findFirst({
       where: {
         id: attemptId,
-        enrollment: { userId: req.student.id },
+        enrollment: {
+          userId: req.student.id,
+          status: "CONFIRMED",
+        },
       },
       include: {
         assessment: {

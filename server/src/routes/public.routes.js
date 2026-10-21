@@ -16,6 +16,13 @@ function getOpenCohortWhere() {
   return {
     status: "OPEN",
     startDate: { gte: today },
+    instructorId: { not: null },
+    instructor: {
+      is: {
+        role: "INSTRUCTOR",
+        isActive: true,
+      },
+    },
     OR: [{ enrollmentDeadline: null }, { enrollmentDeadline: { gte: now } }],
   };
 }
@@ -94,8 +101,8 @@ const courseSelect = {
 };
 
 // GET /api/courses
-// Returns published courses and their upcoming open cohorts.
-router.get("/courses", async (req, res) => {
+// Returns published courses and their upcoming bookable cohorts.
+router.get("/courses", async (_req, res) => {
   try {
     const courses = await prisma.course.findMany({
       where: { isPublished: true },
@@ -113,7 +120,7 @@ router.get("/courses", async (req, res) => {
 });
 
 // GET /api/courses/:slug
-// Returns one published course.
+// Returns one published course and its upcoming bookable cohorts.
 router.get("/courses/:slug", async (req, res) => {
   const slugSchema = z
     .string()
@@ -159,8 +166,8 @@ router.get("/courses/:slug", async (req, res) => {
 });
 
 // GET /api/cohorts
-// Returns upcoming open cohorts for published courses.
-router.get("/cohorts", async (req, res) => {
+// Returns upcoming bookable cohorts for published courses.
+router.get("/cohorts", async (_req, res) => {
   try {
     const cohorts = await prisma.cohort.findMany({
       where: {
