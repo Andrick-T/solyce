@@ -317,8 +317,15 @@ function CourseDetail({ course, onBack }) {
     .split("\n")
     .map((item) => item.trim())
     .filter(Boolean);
+
   const [bookingCohort, setBookingCohort] = useState(null);
   const bookingSectionRef = useRef(null);
+
+  const languageLabel = course.language === "FRENCH" ? "French" : "English";
+
+  const heroImage =
+    "https://images.unsplash.com/photo-1523240795612-9a054b0db644?auto=format&fit=crop&w=1600&q=85";
+
   useEffect(() => {
     if (!bookingCohort || !bookingSectionRef.current) return;
 
@@ -339,60 +346,96 @@ function CourseDetail({ course, onBack }) {
     <main className="detail-page">
       <div className="container">
         <button className="back-link" type="button" onClick={onBack}>
-          <span aria-hidden="true">â†</span> Back to programs
+          <span aria-hidden="true">←</span>
+          Back to programs
         </button>
 
+        {/* 01 — Hero éditorial */}
         <section className="detail-hero">
           <div className="detail-copy">
             <div className="eyebrow">
               <span className="eyebrow-line" />
-              {course.examType} preparation
+              Your next chapter starts here
             </div>
 
-            <span className="detail-language">
-              {course.language === "FRENCH" ? "French" : "English"} language
-            </span>
+            <div className="detail-labels">
+              <span className="detail-language">{languageLabel}</span>
+              {course.examType && (
+                <span className="detail-program-type">
+                  {course.examType} preparation
+                </span>
+              )}
+            </div>
 
             <h1>{course.title}</h1>
+
             <p className="detail-description">{course.description}</p>
 
             <div className="detail-facts">
               <div>
-                <span className="fact-label">Duration</span>
+                <span className="fact-label">Program duration</span>
                 <strong>{course.durationWeeks} weeks</strong>
               </div>
+
               <div>
-                <span className="fact-label">Tuition</span>
+                <span className="fact-label">Program tuition</span>
                 <strong>{formatPrice(course.priceXaf)}</strong>
               </div>
             </div>
 
             <a className="button button-primary" href="#course-schedule">
-              Explore availability <ArrowIcon />
+              Explore available sessions <ArrowIcon />
             </a>
+
+            <p className="detail-hero-note">
+              Structured learning. Live guidance. A clear next step.
+            </p>
           </div>
 
-          <div className="detail-art" aria-hidden="true">
-            <div className="detail-art-circle" />
-            <span className="detail-art-letter">
-              {course.examType?.slice(0, 1) || "S"}
-            </span>
-            <span className="detail-art-caption">LEARN WITH PURPOSE</span>
+          <div className="detail-visual">
+            <img
+              className="detail-hero-image"
+              src={heroImage}
+              alt="Students learning together in a collaborative environment"
+              loading="eager"
+              fetchPriority="high"
+            />
+
+            <div className="detail-visual-overlay" />
+
+            <div className="detail-visual-topline">
+              <span>THE SOLYCE EXPERIENCE</span>
+              <span>01 / YOUR JOURNEY</span>
+            </div>
+
+            <div className="detail-visual-caption">
+              <span className="detail-caption-mark">S.</span>
+              <div>
+                <strong>Learn with purpose.</strong>
+                <span>Move forward with confidence.</span>
+              </div>
+            </div>
           </div>
         </section>
 
-        <section className="curriculum-section">
+        {/* 02 — Le parcours d'apprentissage */}
+        <section
+          className="curriculum-section detail-curriculum"
+          aria-labelledby="curriculum-title"
+        >
           <div className="section-heading">
             <div>
               <div className="eyebrow">
                 <span className="eyebrow-line" />
                 Your learning journey
               </div>
-              <h2>A program with a clear direction.</h2>
+
+              <h2 id="curriculum-title">Every step has a purpose.</h2>
             </div>
+
             <p>
-              A structured progression designed to build skills, confidence, and
-              exam readiness.
+              Explore the learning topics included in this program and
+              understand what your journey will cover.
             </p>
           </div>
 
@@ -403,9 +446,11 @@ function CourseDetail({ course, onBack }) {
                   <span className="curriculum-number">
                     {String(index + 1).padStart(2, "0")}
                   </span>
-                  <span>{item}</span>
-                  <span className="curriculum-check" aria-hidden="true">
-                    â†—
+
+                  <span className="curriculum-item-text">{item}</span>
+
+                  <span className="curriculum-arrow" aria-hidden="true">
+                    ↗
                   </span>
                 </li>
               ))}
@@ -417,34 +462,127 @@ function CourseDetail({ course, onBack }) {
           )}
         </section>
 
-        <section id="course-schedule" className="schedule-section">
+        {/* 03 — L'expérience d'apprentissage */}
+        <section
+          className="detail-experience"
+          aria-labelledby="experience-title"
+        >
+          <div className="detail-experience-intro">
+            <div className="eyebrow">
+              <span className="eyebrow-line" />
+              The Solyce approach
+            </div>
+
+            <h2 id="experience-title">
+              Learning works better when you take part.
+            </h2>
+
+            <p>
+              Solyce brings learners together for instructor-led live classes,
+              with opportunities to practise, ask questions and work toward a
+              shared learning objective.
+            </p>
+          </div>
+
+          <div className="detail-experience-points">
+            <article className="detail-experience-point">
+              <span className="detail-point-number">01</span>
+              <div>
+                <h3>Learn with an instructor</h3>
+                <p>
+                  Follow live sessions guided by an instructor who supports your
+                  learning journey.
+                </p>
+              </div>
+            </article>
+
+            <article className="detail-experience-point">
+              <span className="detail-point-number">02</span>
+              <div>
+                <h3>Practise in a small group</h3>
+                <p>
+                  Learn alongside a group of up to eight students, creating room
+                  for interaction and participation.
+                </p>
+              </div>
+            </article>
+
+            <article className="detail-experience-point">
+              <span className="detail-point-number">03</span>
+              <div>
+                <h3>Choose a session that fits</h3>
+                <p>
+                  Review the available cohort dates, schedule and tuition before
+                  requesting your place.
+                </p>
+              </div>
+            </article>
+          </div>
+        </section>
+
+        {/* 04 — Choix d'une session */}
+        <section
+          id="course-schedule"
+          className="schedule-section detail-schedule"
+          aria-labelledby="schedule-title"
+        >
           <div className="section-heading">
             <div>
               <div className="eyebrow">
                 <span className="eyebrow-line" />
-                Next steps
+                Take the next step
               </div>
-              <h2>Find your next cohort.</h2>
+
+              <h2 id="schedule-title">Find the right session for you.</h2>
             </div>
+
+            <p>
+              Compare the upcoming sessions and select the cohort you would like
+              to join.
+            </p>
           </div>
 
           {course.cohorts?.length ? (
             <div className="cohort-list">
-              {course.cohorts.map((cohort) => (
+              {course.cohorts.map((cohort, index) => (
                 <article className="cohort-card" key={cohort.id}>
-                  <div>
-                    <span className="cohort-label">{cohort.name}</span>
-                    <h3>{formatDate(cohort.startDate)}</h3>
-                    <p>
-                      Ends {formatDate(cohort.endDate)} Â·{" "}
-                      {cohort.scheduleDescription}
-                    </p>
+                  <div className="cohort-main">
+                    <span className="cohort-label">
+                      SESSION {String(index + 1).padStart(2, "0")}
+                    </span>
+
+                    <h3>{cohort.name}</h3>
+
+                    <div className="cohort-dates">
+                      <span>
+                        <span className="cohort-detail-label">Starts</span>
+                        {formatDate(cohort.startDate)}
+                      </span>
+
+                      <span>
+                        <span className="cohort-detail-label">Ends</span>
+                        {formatDate(cohort.endDate)}
+                      </span>
+                    </div>
+
+                    {cohort.scheduleDescription && (
+                      <p className="cohort-schedule-description">
+                        {cohort.scheduleDescription}
+                      </p>
+                    )}
                   </div>
+
                   <div className="cohort-price">
+                    <span className="cohort-price-label">Tuition</span>
+
                     <strong>
                       {formatPrice(cohort.priceXaf ?? course.priceXaf)}
                     </strong>
-                    <span>{cohort.seatsRemaining} places remaining</span>
+
+                    <span className="cohort-seats">
+                      {cohort.seatsRemaining} places remaining
+                    </span>
+
                     <button
                       className="button button-primary cohort-book-button"
                       type="button"
@@ -459,15 +597,17 @@ function CourseDetail({ course, onBack }) {
           ) : (
             <div className="availability-panel">
               <div className="availability-icon" aria-hidden="true">
-                â†—
+                ↗
               </div>
+
               <div>
-                <h3>Upcoming dates are being prepared.</h3>
+                <h3>New sessions are being prepared.</h3>
                 <p>
-                  Contact our team to express your interest and learn when the
-                  next intake will open.
+                  Contact our team to express your interest and receive
+                  information about upcoming enrolment.
                 </p>
               </div>
+
               <a
                 className="button button-outline"
                 href="mailto:hello@solyce.com?subject=Course%20enquiry"
@@ -477,14 +617,30 @@ function CourseDetail({ course, onBack }) {
             </div>
           )}
         </section>
+
+        {/* 05 — Réservation */}
         {bookingCohort && (
           <section
             ref={bookingSectionRef}
-            className="booking-section"
+            className="booking-section detail-booking"
             id="course-booking"
             aria-label="Course booking"
             tabIndex={-1}
           >
+            <div className="detail-booking-intro">
+              <div className="eyebrow">
+                <span className="eyebrow-line" />
+                Your next step
+              </div>
+
+              <h2>Let's get you started.</h2>
+
+              <p>
+                Enter your contact details to request a place in your selected
+                session.
+              </p>
+            </div>
+
             <BookingForm
               course={course}
               cohort={bookingCohort}
