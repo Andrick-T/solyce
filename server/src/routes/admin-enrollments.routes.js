@@ -81,7 +81,7 @@ router.get("/", async (req, res) => {
         ? {
             fullName: enrollment.user.fullName,
             email: enrollment.user.email,
-            phone: null,
+            phone: enrollment.guestPhone,
           }
         : {
             fullName: enrollment.guestFullName,

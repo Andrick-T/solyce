@@ -62,7 +62,7 @@ router.get("/", async (req, res) => {
           ? {
               fullName: payment.enrollment.user.fullName,
               email: payment.enrollment.user.email,
-              phone: null,
+              phone: payment.enrollment.guestPhone,
             }
           : {
               fullName: payment.enrollment.guestFullName,
