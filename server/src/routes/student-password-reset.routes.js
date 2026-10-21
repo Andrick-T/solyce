@@ -2,12 +2,11 @@ import { Router } from "express";
 import argon2 from "argon2";
 import { createHash, randomBytes } from "node:crypto";
 import { z } from "zod";
+import { rateLimit } from "express-rate-limit";
 
 import { prisma } from "../db/prisma.js";
 import { requireSameOrigin } from "../middleware/require-same-origin.js";
 import { sendPasswordResetEmail } from "../services/email.js";
-
-import { rateLimit } from "express-rate-limit";
 
 const router = Router();
 
@@ -92,7 +91,7 @@ router.post("/", requestLimiter, requireSameOrigin, async (req, res) => {
       },
     });
 
-    // Always return the same response for unknown and ineligible accounts.
+    // Keep the response identical for unknown and ineligible accounts.
     if (!user) {
       return res.status(200).json({ data: genericResponse });
     }
@@ -102,7 +101,7 @@ router.post("/", requestLimiter, requireSameOrigin, async (req, res) => {
     const expiresAt = new Date(Date.now() + 30 * 60 * 1000);
 
     await prisma.$transaction(async (tx) => {
-      // Invalidate any outstanding reset links for this user.
+      // Invalidate previous reset links for this user.
       await tx.passwordResetToken.updateMany({
         where: {
           userId: user.id,
@@ -193,6 +192,7 @@ router.post("/confirm", confirmLimiter, requireSameOrigin, async (req, res) => {
     const passwordHash = await argon2.hash(parsed.data.password);
 
     const consumed = await prisma.$transaction(async (tx) => {
+      // Atomically consume the token to prevent reuse.
       const result = await tx.passwordResetToken.updateMany({
         where: {
           id: tokenRecord.id,
@@ -218,7 +218,7 @@ router.post("/confirm", confirmLimiter, requireSameOrigin, async (req, res) => {
         },
       });
 
-      // Invalidate any other outstanding reset links for this user.
+      // Invalidate every other outstanding reset link for this user.
       await tx.passwordResetToken.updateMany({
         where: {
           userId: tokenRecord.userId,
@@ -229,6 +229,15 @@ router.post("/confirm", confirmLimiter, requireSameOrigin, async (req, res) => {
           usedAt: new Date(),
         },
       });
+
+      // Revoke all stored sessions belonging to this user.
+      // The session store serializes session data as JSON, including userId.
+      // Keep this inside the transaction: a failure must roll back the
+      // password change as well as token consumption.
+      await tx.$executeRaw`
+          DELETE FROM solyce_sessions
+          WHERE JSON_UNQUOTE(JSON_EXTRACT(data, '$.userId')) = ${String(tokenRecord.userId)}
+        `;
 
       return true;
     });
@@ -245,7 +254,7 @@ router.post("/confirm", confirmLimiter, requireSameOrigin, async (req, res) => {
     return res.status(200).json({
       data: {
         message:
-          "Your password has been reset. You can now sign in with your new password.",
+          "Your password has been reset. Please sign in again on all devices with your new password.",
       },
     });
   } catch (error) {
