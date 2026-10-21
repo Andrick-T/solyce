@@ -3243,3 +3243,67 @@
     transition: none;
   }
 }
+
+/* Phase 5 — Booking journey */
+
+.detail-page .detail-booking-intro {
+  align-self: start;
+}
+
+.detail-page .detail-booking-steps {
+  display: grid;
+  gap: 0;
+  margin: 34px 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.detail-page .detail-booking-steps li {
+  display: grid;
+  grid-template-columns: 36px minmax(0, 1fr);
+  gap: 15px;
+  padding: 20px 0;
+  border-top: 1px solid #e0e1d8;
+}
+
+.detail-page .detail-booking-step-number {
+  display: grid;
+  width: 34px;
+  height: 34px;
+  place-items: center;
+  border: 1px solid #d8ddce;
+  border-radius: 50%;
+  color: #59674a;
+  font-size: 10px;
+  font-weight: 600;
+}
+
+.detail-page .detail-booking-steps strong {
+  display: block;
+  color: #28342b;
+  font-size: 12px;
+  font-weight: 600;
+  line-height: 1.6;
+}
+
+.detail-page .detail-booking-steps li p {
+  margin: 5px 0 0;
+  color: #70776c;
+  font-size: 11px;
+  line-height: 1.8;
+}
+
+@media (max-width: 760px) {
+  .detail-page .detail-booking-intro {
+    position: static;
+    padding-top: 0;
+  }
+
+  .detail-page .detail-booking-steps {
+    margin-top: 22px;
+  }
+
+  .detail-page .detail-booking-steps li {
+    padding: 15px 0;
+  }
+}

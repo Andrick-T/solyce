@@ -633,12 +633,39 @@ function CourseDetail({ course, onBack }) {
                 Your next step
               </div>
 
-              <h2>Let's get you started.</h2>
+              <h2>One simple step towards your learning goals.</h2>
 
               <p>
-                Enter your contact details to request a place in your selected
-                session.
+                Reserve your place in the selected session. Our team will guide
+                you through the remaining steps before your enrolment is
+                confirmed.
               </p>
+
+              <ol className="detail-booking-steps">
+                <li>
+                  <span className="detail-booking-step-number">01</span>
+                  <div>
+                    <strong>Submit your request</strong>
+                    <p>Share your contact details to register your interest.</p>
+                  </div>
+                </li>
+
+                <li>
+                  <span className="detail-booking-step-number">02</span>
+                  <div>
+                    <strong>Receive payment instructions</strong>
+                    <p>Our team will explain the accepted payment methods.</p>
+                  </div>
+                </li>
+
+                <li>
+                  <span className="detail-booking-step-number">03</span>
+                  <div>
+                    <strong>Confirm your enrolment</strong>
+                    <p>Your place is confirmed after payment verification.</p>
+                  </div>
+                </li>
+              </ol>
             </div>
 
             <BookingForm

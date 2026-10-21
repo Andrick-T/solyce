@@ -88,6 +88,36 @@ function StudentBrand() {
     </a>
   );
 }
+
+function StudentAuthEditorial() {
+  return (
+    <aside className="student-auth-editorial">
+      <a className="student-auth-editorial-brand" href="/">
+        solyce<span>.</span>
+      </a>
+
+      <div className="student-auth-editorial-content">
+        <p className="student-auth-editorial-eyebrow">YOUR NEXT CHAPTER</p>
+
+        <h2>
+          Learn with purpose.
+          <em> Move forward with confidence.</em>
+        </h2>
+
+        <p>
+          A thoughtful learning experience, built around your goals and your
+          next step.
+        </p>
+      </div>
+
+      <div className="student-auth-editorial-footer">
+        <span className="student-auth-editorial-mark">S.</span>
+        <span>Language learning, with direction.</span>
+      </div>
+    </aside>
+  );
+}
+
 function EmptyState({ title, children }) {
   return (
     <div className="student-empty">
@@ -446,6 +476,7 @@ export default function StudentApp() {
 
     return (
       <div className="student-auth-screen">
+        <StudentAuthEditorial />
         <div className="student-auth-card">
           <StudentBrand />
 
@@ -547,6 +578,7 @@ export default function StudentApp() {
   if (loading)
     return (
       <div className="student-auth-screen">
+        <StudentAuthEditorial />
         <div className="student-auth-card">
           <StudentBrand />
           <p>Checking your student session…</p>
@@ -556,6 +588,7 @@ export default function StudentApp() {
   if (!user)
     return (
       <div className="student-auth-screen">
+        <StudentAuthEditorial />
         <div className="student-auth-card">
           <StudentBrand />
           <p className="student-eyebrow">
