@@ -77,7 +77,12 @@ function parseId(value) {
 }
 
 function fail(res, status, code, message) {
-  return res.status(status).json({ error: { code, message } });
+  return res.status(status).json({
+    error: {
+      code,
+      message,
+    },
+  });
 }
 
 function validationError(res, error) {
@@ -113,6 +118,7 @@ function handleError(res, error, operation) {
   }
 
   console.error(`${operation} failed:`, error.message);
+
   return fail(
     res,
     500,
@@ -136,6 +142,22 @@ function validateSessionDates(start, end) {
   return true;
 }
 
+/**
+ * Publication is controlled by administrators.
+ * Modules and lessons may only be published when their parent program
+ * has approvalStatus APPROVED.
+ *
+ * This helper is used only when a request explicitly sets isPublished=true.
+ * It does not prevent ordinary edits to existing content.
+ */
+function isPublishingUnapprovedProgram(isPublished, approvalStatus) {
+  return isPublished === true && approvalStatus !== "APPROVED";
+}
+
+// -----------------------------------------------------------------------------
+// MODULES
+// -----------------------------------------------------------------------------
+
 // GET /api/admin/pedagogy/modules?courseId=1
 router.get("/modules", requireAdmin, async (req, res) => {
   const courseId = parseId(req.query.courseId);
@@ -157,13 +179,21 @@ router.get("/modules", requireAdmin, async (req, res) => {
         lessons: {
           orderBy: { position: "asc" },
           include: {
-            _count: { select: { resources: true, assessments: true } },
+            _count: {
+              select: {
+                resources: true,
+                assessments: true,
+              },
+            },
           },
         },
       },
     });
 
-    return res.json({ data, count: data.length });
+    return res.json({
+      data,
+      count: data.length,
+    });
   } catch (error) {
     return handleError(res, error, "Admin module listing");
   }
@@ -172,17 +202,42 @@ router.get("/modules", requireAdmin, async (req, res) => {
 // POST /api/admin/pedagogy/modules
 router.post("/modules", requireSameOrigin, requireAdmin, async (req, res) => {
   const parsed = moduleSchema.safeParse(req.body);
-  if (!parsed.success) return validationError(res, parsed.error);
+
+  if (!parsed.success) {
+    return validationError(res, parsed.error);
+  }
 
   try {
     const course = await prisma.course.findUnique({
       where: { id: parsed.data.courseId },
-      select: { id: true },
+      select: {
+        id: true,
+        approvalStatus: true,
+      },
     });
 
-    if (!course) return fail(res, 404, "COURSE_NOT_FOUND", "Course not found.");
+    if (!course) {
+      return fail(res, 404, "COURSE_NOT_FOUND", "Course not found.");
+    }
 
-    const data = await prisma.courseModule.create({ data: parsed.data });
+    if (
+      isPublishingUnapprovedProgram(
+        parsed.data.isPublished,
+        course.approvalStatus,
+      )
+    ) {
+      return fail(
+        res,
+        409,
+        "COURSE_NOT_APPROVED",
+        "Modules can only be published within an approved program.",
+      );
+    }
+
+    const data = await prisma.courseModule.create({
+      data: parsed.data,
+    });
+
     return res.status(201).json({ data });
   } catch (error) {
     return handleError(res, error, "Admin module creation");
@@ -196,19 +251,47 @@ router.patch(
   requireAdmin,
   async (req, res) => {
     const id = parseId(req.params.id);
-    if (!id)
+
+    if (!id) {
       return fail(res, 400, "INVALID_MODULE_ID", "Provide a valid module ID.");
+    }
 
     const parsed = moduleUpdateSchema.safeParse(req.body);
-    if (!parsed.success) return validationError(res, parsed.error);
+
+    if (!parsed.success) {
+      return validationError(res, parsed.error);
+    }
 
     try {
       const existing = await prisma.courseModule.findUnique({
         where: { id },
-        select: { id: true },
+        select: {
+          id: true,
+          course: {
+            select: {
+              approvalStatus: true,
+            },
+          },
+        },
       });
-      if (!existing)
+
+      if (!existing) {
         return fail(res, 404, "MODULE_NOT_FOUND", "Module not found.");
+      }
+
+      if (
+        isPublishingUnapprovedProgram(
+          parsed.data.isPublished,
+          existing.course.approvalStatus,
+        )
+      ) {
+        return fail(
+          res,
+          409,
+          "COURSE_NOT_APPROVED",
+          "Modules can only be published within an approved program.",
+        );
+      }
 
       const data = await prisma.courseModule.update({
         where: { id },
@@ -222,19 +305,53 @@ router.patch(
   },
 );
 
+// -----------------------------------------------------------------------------
+// LESSONS
+// -----------------------------------------------------------------------------
+
 // POST /api/admin/pedagogy/lessons
 router.post("/lessons", requireSameOrigin, requireAdmin, async (req, res) => {
   const parsed = lessonSchema.safeParse(req.body);
-  if (!parsed.success) return validationError(res, parsed.error);
+
+  if (!parsed.success) {
+    return validationError(res, parsed.error);
+  }
 
   try {
     const module = await prisma.courseModule.findUnique({
       where: { id: parsed.data.moduleId },
-      select: { id: true },
+      select: {
+        id: true,
+        course: {
+          select: {
+            approvalStatus: true,
+          },
+        },
+      },
     });
-    if (!module) return fail(res, 404, "MODULE_NOT_FOUND", "Module not found.");
 
-    const data = await prisma.lesson.create({ data: parsed.data });
+    if (!module) {
+      return fail(res, 404, "MODULE_NOT_FOUND", "Module not found.");
+    }
+
+    if (
+      isPublishingUnapprovedProgram(
+        parsed.data.isPublished,
+        module.course.approvalStatus,
+      )
+    ) {
+      return fail(
+        res,
+        409,
+        "COURSE_NOT_APPROVED",
+        "Lessons can only be published within an approved program.",
+      );
+    }
+
+    const data = await prisma.lesson.create({
+      data: parsed.data,
+    });
+
     return res.status(201).json({ data });
   } catch (error) {
     return handleError(res, error, "Admin lesson creation");
@@ -248,19 +365,51 @@ router.patch(
   requireAdmin,
   async (req, res) => {
     const id = parseId(req.params.id);
-    if (!id)
+
+    if (!id) {
       return fail(res, 400, "INVALID_LESSON_ID", "Provide a valid lesson ID.");
+    }
 
     const parsed = lessonUpdateSchema.safeParse(req.body);
-    if (!parsed.success) return validationError(res, parsed.error);
+
+    if (!parsed.success) {
+      return validationError(res, parsed.error);
+    }
 
     try {
       const existing = await prisma.lesson.findUnique({
         where: { id },
-        select: { id: true },
+        select: {
+          id: true,
+          module: {
+            select: {
+              course: {
+                select: {
+                  approvalStatus: true,
+                },
+              },
+            },
+          },
+        },
       });
-      if (!existing)
+
+      if (!existing) {
         return fail(res, 404, "LESSON_NOT_FOUND", "Lesson not found.");
+      }
+
+      if (
+        isPublishingUnapprovedProgram(
+          parsed.data.isPublished,
+          existing.module.course.approvalStatus,
+        )
+      ) {
+        return fail(
+          res,
+          409,
+          "COURSE_NOT_APPROVED",
+          "Lessons can only be published within an approved program.",
+        );
+      }
 
       const data = await prisma.lesson.update({
         where: { id },
@@ -274,11 +423,17 @@ router.patch(
   },
 );
 
+// -----------------------------------------------------------------------------
+// COHORT SESSIONS
+// -----------------------------------------------------------------------------
+
 // GET /api/admin/pedagogy/cohorts/:cohortId/sessions
 router.get("/cohorts/:cohortId/sessions", requireAdmin, async (req, res) => {
   const cohortId = parseId(req.params.cohortId);
-  if (!cohortId)
+
+  if (!cohortId) {
     return fail(res, 400, "INVALID_COHORT_ID", "Provide a valid cohort ID.");
+  }
 
   try {
     const data = await prisma.cohortLesson.findMany({
@@ -290,13 +445,22 @@ router.get("/cohorts/:cohortId/sessions", requireAdmin, async (req, res) => {
             id: true,
             title: true,
             position: true,
-            module: { select: { id: true, title: true, courseId: true } },
+            module: {
+              select: {
+                id: true,
+                title: true,
+                courseId: true,
+              },
+            },
           },
         },
       },
     });
 
-    return res.json({ data, count: data.length });
+    return res.json({
+      data,
+      count: data.length,
+    });
   } catch (error) {
     return handleError(res, error, "Admin cohort session listing");
   }
@@ -305,9 +469,13 @@ router.get("/cohorts/:cohortId/sessions", requireAdmin, async (req, res) => {
 // POST /api/admin/pedagogy/sessions
 router.post("/sessions", requireSameOrigin, requireAdmin, async (req, res) => {
   const parsed = cohortLessonSchema.safeParse(req.body);
-  if (!parsed.success) return validationError(res, parsed.error);
+
+  if (!parsed.success) {
+    return validationError(res, parsed.error);
+  }
 
   const input = parsed.data;
+
   if (!validateSessionDates(input.scheduledAt, input.scheduledEndAt)) {
     return fail(
       res,
@@ -321,20 +489,38 @@ router.post("/sessions", requireSameOrigin, requireAdmin, async (req, res) => {
     const [cohort, lesson] = await Promise.all([
       prisma.cohort.findUnique({
         where: { id: input.cohortId },
-        select: { id: true, courseId: true },
+        select: {
+          id: true,
+          courseId: true,
+        },
       }),
       prisma.lesson.findUnique({
         where: { id: input.lessonId },
         select: {
           id: true,
           isPublished: true,
-          module: { select: { courseId: true } },
+          module: {
+            select: {
+              courseId: true,
+              course: {
+                select: {
+                  approvalStatus: true,
+                },
+              },
+            },
+          },
         },
       }),
     ]);
 
-    if (!cohort) return fail(res, 404, "COHORT_NOT_FOUND", "Cohort not found.");
-    if (!lesson) return fail(res, 404, "LESSON_NOT_FOUND", "Lesson not found.");
+    if (!cohort) {
+      return fail(res, 404, "COHORT_NOT_FOUND", "Cohort not found.");
+    }
+
+    if (!lesson) {
+      return fail(res, 404, "LESSON_NOT_FOUND", "Lesson not found.");
+    }
+
     if (cohort.courseId !== lesson.module.courseId) {
       return fail(
         res,
@@ -343,6 +529,19 @@ router.post("/sessions", requireSameOrigin, requireAdmin, async (req, res) => {
         "The lesson must belong to the course assigned to this cohort.",
       );
     }
+
+    if (
+      lesson.module.course.approvalStatus !== "APPROVED" &&
+      input.status !== "CANCELLED"
+    ) {
+      return fail(
+        res,
+        409,
+        "COURSE_NOT_APPROVED",
+        "Sessions can only be scheduled for an approved program.",
+      );
+    }
+
     if (!lesson.isPublished && input.status !== "CANCELLED") {
       return fail(
         res,
@@ -358,7 +557,14 @@ router.post("/sessions", requireSameOrigin, requireAdmin, async (req, res) => {
         scheduledAt: new Date(input.scheduledAt),
         scheduledEndAt: new Date(input.scheduledEndAt),
       },
-      include: { lesson: { select: { id: true, title: true } } },
+      include: {
+        lesson: {
+          select: {
+            id: true,
+            title: true,
+          },
+        },
+      },
     });
 
     return res.status(201).json({ data });
@@ -374,29 +580,63 @@ router.patch(
   requireAdmin,
   async (req, res) => {
     const id = parseId(req.params.id);
-    if (!id)
+
+    if (!id) {
       return fail(
         res,
         400,
         "INVALID_SESSION_ID",
         "Provide a valid session ID.",
       );
+    }
 
     const parsed = cohortLessonUpdateSchema.safeParse(req.body);
-    if (!parsed.success) return validationError(res, parsed.error);
+
+    if (!parsed.success) {
+      return validationError(res, parsed.error);
+    }
 
     try {
       const existing = await prisma.cohortLesson.findUnique({
         where: { id },
-        select: { id: true, scheduledAt: true, scheduledEndAt: true },
+        select: {
+          id: true,
+          cohortId: true,
+          lessonId: true,
+          scheduledAt: true,
+          scheduledEndAt: true,
+          status: true,
+          cohort: {
+            select: {
+              courseId: true,
+            },
+          },
+          lesson: {
+            select: {
+              isPublished: true,
+              module: {
+                select: {
+                  courseId: true,
+                  course: {
+                    select: {
+                      approvalStatus: true,
+                    },
+                  },
+                },
+              },
+            },
+          },
+        },
       });
-      if (!existing)
+
+      if (!existing) {
         return fail(
           res,
           404,
           "SESSION_NOT_FOUND",
           "Scheduled session not found.",
         );
+      }
 
       const nextStart =
         parsed.data.scheduledAt ?? existing.scheduledAt.toISOString();
@@ -412,16 +652,59 @@ router.patch(
         );
       }
 
+      const nextStatus = parsed.data.status ?? existing.status;
+
+      if (existing.cohort.courseId !== existing.lesson.module.courseId) {
+        return fail(
+          res,
+          400,
+          "LESSON_COURSE_MISMATCH",
+          "The lesson must belong to the course assigned to this cohort.",
+        );
+      }
+
+      if (
+        nextStatus !== "CANCELLED" &&
+        existing.lesson.module.course.approvalStatus !== "APPROVED"
+      ) {
+        return fail(
+          res,
+          409,
+          "COURSE_NOT_APPROVED",
+          "Sessions can only remain scheduled for an approved program.",
+        );
+      }
+
+      if (nextStatus !== "CANCELLED" && !existing.lesson.isPublished) {
+        return fail(
+          res,
+          400,
+          "LESSON_NOT_PUBLISHED",
+          "Publish the lesson before scheduling it for students.",
+        );
+      }
+
       const updateData = { ...parsed.data };
-      if (parsed.data.scheduledAt)
+
+      if (parsed.data.scheduledAt) {
         updateData.scheduledAt = new Date(parsed.data.scheduledAt);
-      if (parsed.data.scheduledEndAt)
+      }
+
+      if (parsed.data.scheduledEndAt) {
         updateData.scheduledEndAt = new Date(parsed.data.scheduledEndAt);
+      }
 
       const data = await prisma.cohortLesson.update({
         where: { id },
         data: updateData,
-        include: { lesson: { select: { id: true, title: true } } },
+        include: {
+          lesson: {
+            select: {
+              id: true,
+              title: true,
+            },
+          },
+        },
       });
 
       return res.json({ data });

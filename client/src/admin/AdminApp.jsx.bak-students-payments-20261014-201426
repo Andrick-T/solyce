@@ -1,8 +1,8 @@
-PS C:\Users\lenovo\Solyce> cd C:\Users\lenovo\Solyce
->> 
->> npm run build --prefix client
->> npm run lint --prefix client
->> npx --prefix server prisma validate --schema=prisma/schema.prisma
+Selon où nous nous sommes arretés, voici le résultat de la phase 2.3 : PS C:\Users\lenovo\Solyce> npx --prefix server prisma validate --schema=server/prisma/schema.prisma
+Environment variables loaded from .env
+Prisma schema loaded from server\prisma\schema.prisma
+The schema at server\prisma\schema.prisma is valid 🚀
+PS C:\Users\lenovo\Solyce> npm run build --prefix client
 
 > client@0.0.0 build
 > vite build
@@ -11,185 +11,118 @@ vite v8.3.4 building client environment for production...
 ✓ 32 modules transformed.
 computing gzip size...
 dist/index.html                   0.45 kB │ gzip:   0.29 kB
-dist/assets/index-D9RkgR0a.css   85.89 kB │ gzip:  17.04 kB
-dist/assets/index-By-cZYhT.js   429.49 kB │ gzip: 111.75 kB
+dist/assets/index-CUpC1eL4.css   86.26 kB │ gzip:  17.10 kB
+dist/assets/index-DsLsP9rD.js   431.12 kB │ gzip: 112.25 kB
 
-✓ built in 767ms
+✓ built in 726ms
+PS C:\Users\lenovo\Solyce> .... pour contexte, nous travaillions sur la phase 2.2. en exécutant ce prompt : Solyce — Phase 2.2: Complete the Instructor Learning Studio
+Work in the existing local Solyce repository at C:\Users\lenovo\Solyce.
+Complete the existing instructor learning studio by adding instructor-side authoring of learning resources and assessments/questions, integrated with the current curriculum, course approval workflow, and administrative publishing controls.
+1. Inspect the current Git status and active branch. Do not discard or overwrite existing changes.
+2. Read the existing instructor studio, instructor pedagogy routes, instructor assessment routes, administrative learning-content routes, administrative pedagogy routes, Prisma schema, and corresponding admin interfaces.
+3. Reuse the existing Prisma models, API conventions, validation utilities, and CSS design system.
+4. Do not duplicate existing module/lesson CRUD or rebuild program submission, which are already implemented.
+5. Do not modify production data or apply database migrations unless the schema inspection demonstrates that a change is strictly necessary.
+Extend the existing instructor learning studio so an instructor can create, list, view, and edit learning resources associated with lessons in their own editable programs.
+Support the existing resource types: PDF, DOCUMENT, VIDEO, AUDIO, LINK, IMAGE, OTHER.
+Include title, description, URL, release phase, and ordering position. Reuse the existing LearningResource model and its current field constraints.
+Do not introduce file uploads or external storage services in this phase. Resources use validated URLs.
+Allow instructors to create, list, view, and edit assessments associated with lessons in their own editable programs.
+Support the existing assessment types: HOMEWORK, QUIZ, PRACTICE, MOCK_EXAM.
+Support instructions, description, release phase, maximum score, passing score, optional time limit, and optional deadline.
+Allow instructors to add, list, edit, and order questions using the existing AssessmentQuestion model and supported question types. Validate question options, expected answers, points, and positions. Ensure the total possible question points and assessment scoring configuration remain coherent.
+Never expose correct answers to student-facing endpoints before submission or grading.
+Enforce authorization on the server, not only in the UI.
+- An instructor may manage content only within their own program.
+- Creation and modification are allowed only when the parent program has approval status DRAFT or REJECTED.
+- Instructors cannot publish resources, assessments, questions, modules, or lessons directly.
+- New content must remain unpublished.
+- Preserve the existing program submission workflow.
+- Do not allow changes to content while the program is PENDING_REVIEW or APPROVED.
+- Keep publication and approval under administrator control.
+- Use the existing same-origin protection and validation conventions on mutations.
+- Return consistent errors for invalid input, missing records, unauthorized ownership, and locked programs.
+Do not change the existing grading workflow or student assessment endpoints except where a strictly necessary compatibility fix is identified.
+Integrate resource and assessment management into the existing InstructorLearningStudio.jsx rather than creating a separate application.
+Keep the existing visual language and layout. Provide clear loading, saving, success, error, empty, and read-only states. Prevent duplicate submissions while saving and refresh affected data after successful mutations.
+Avoid overengineering, new state-management libraries, unnecessary abstractions, and unrelated UI redesigns.
+1. Run the client production build.
+2. Run the server's existing validation and test commands, where available.
+3. Verify an instructor can manage content in their own draft program.
+4. Verify an instructor cannot access or modify another instructor's content by changing record IDs.
+5. Verify editing is blocked after program submission and after approval.
+6. Verify new content is not published automatically.
+7. Verify administrators retain their existing review and publication capabilities.
+8. Verify the existing student learning, resource-access, assessment-taking, and grading workflows are not regressed.
+Fix only issues directly related to this scope.
+Never work directly on main. Create a focused feature branch from the appropriate integration branch, following the repository's existing workflow. Preserve unrelated local modifications. Commit incrementally only after verification.
+Summarize the files changed, endpoints added or modified, authorization rules, tests/build results, and any remaining limitations. Clearly distinguish checks actually performed from those not performed. ... je rappelle que tous les fichiers sont accéssible depuis le dépot github. Tu ne PEUX PAS écrire directement dans le dépot, toutes modification des fichiers se fera ici car tu m'envera las fichiers à modifier directement ici et je modifierai dans mon dépot local avant d'envoyer cela sur le depot github. Nous ne créerons pas non plus de branche develop, feature etc pour éviter toute complexité inutile. Le projet est déjà bien avancé, voici qu'elle a été le plan initial: phase 2 : 2.1 — Gestion des instructeurs
 
-> client@0.0.0 lint
-> eslint .
+Vérifier et finaliser la liste des instructeurs, leur statut actif/inactif et leur accès aux fonctionnalités qui leur sont destinées.
 
+2.2 — Espace instructeur
 
-C:\Users\lenovo\Solyce\client\src\App.jsx
-  488:5  error  Error: Calling setState synchronously within an effect can trigger cascading renders
+Finaliser le parcours de gestion des cours, du curriculum et des soumissions pour approbation, en distinguant clairement les cours modifiables de ceux en attente ou déjà approuvés.
 
-Effects are intended to synchronize state between React and external systems such as manually updating the DOM, state management libraries, or other platform APIs. In general, the body of an effect should do one or both of the following:
-* Update external systems with the latest state from React.
-* Subscribe for updates from some external system, calling setState in a callback function when external state changes.
+2.3 — Cohortes et planification
 
-Calling setState synchronously within an effect body causes cascading renders that can hurt performance, and is not recommended. (https://react.dev/learn/you-might-not-need-an-effect).
+Préparer la gestion des cohortes, avec un instructeur obligatoire, une capacité maximale de huit étudiants et les créneaux de cours définis pour Solyce.
 
-  486 |   useEffect(() => {
-  487 |     const controller = new AbortController();
-> 488 |     loadCourses(controller.signal);
-      |     ^^^^^^^^^^^ Avoid calling setState() directly within an effect
-  489 |
-  490 |     return () => controller.abort();
-  491 |   }, []);  react-hooks/set-state-in-effect
+2.4 — Administration
 
-C:\Users\lenovo\Solyce\client\src\admin\LearningStudio.jsx
-  305:7   error    Error: Calling setState synchronously within an effect can trigger cascading renders
+Consolider les actions d'approbation, de rejet et de publication séparée, puis assurer leur cohérence avec la gestion des instructeurs et des cohortes. ... plan global: voici ce qu'était notre program initial, restons dessus: Phase 1 — Terminer les corrections déjà demandées
 
-Effects are intended to synchronize state between React and external systems such as manually updating the DOM, state management libraries, or other platform APIs. In general, the body of an effect should do one or both of the following:
-* Update external systems with the latest state from React.
-* Subscribe for updates from some external system, calling setState in a callback function when external state changes.
+Étape actuelle
 
-Calling setState synchronously within an effect body causes cascading renders that can hurt performance, and is not recommended. (https://react.dev/learn/you-might-not-need-an-effect).
+Corriger les fonctionnalités déjà engagées sans toucher inutilement à l'architecture.
 
-  303 |   useEffect(() => {
-  304 |     if (!selectedModule) {
-> 305 |       setSelectedLessonId("");
-      |       ^^^^^^^^^^^^^^^^^^^ Avoid calling setState() directly within an effect
-  306 |       return;
-  307 |     }
-  308 |                              react-hooks/set-state-in-effect
-  318:6   warning  React Hook useEffect has a missing dependency: 'selectedModule'. Either include it or remove the dependency array                                                                                              react-hooks/exhaustive-deps
-  321:5   error    Error: Calling setState synchronously within an effect can trigger cascading renders
+- Vérifier les corrections de `MyPrograms.jsx` et `InstructorLearningStudio.jsx`.
+- Terminer le workflow d'approbation des programmes.
+- Ajouter les actions d'approbation et de rejet dans l'espace administrateur.
+- Séparer clairement le statut d'approbation du statut de publication.
+- Vérifier les permissions côté serveur et le comportement du curriculum en lecture seule.
 
-Effects are intended to synchronize state between React and external systems such as manually updating the DOM, state management libraries, or other platform APIs. In general, the body of an effect should do one or both of the following:
-* Update external systems with the latest state from React.
-* Subscribe for updates from some external system, calling setState in a callback function when external state changes.
+## Phase 2 — Terminer les parcours instructeur et administrateur
 
-Calling setState synchronously within an effect body causes cascading renders that can hurt performance, and is not recommended. (https://react.dev/learn/you-might-not-need-an-effect).
+- Instructeur : créer un programme, modifier son contenu, gérer son curriculum et soumettre le programme à validation.
+- Administrateur : consulter les programmes, approuver ou rejeter les soumissions, gérer les cours et les cohortes.
+- Vérifier que les programmes restent visibles après soumission ou approbation.
+- Vérifier les rôles, les accès interdits et les retours d'erreur.
 
-  319 |
-  320 |   useEffect(() => {
-> 321 |     loadLessonContent().catch((err) => setError(err.message));
-      |     ^^^^^^^^^^^^^^^^^ Avoid calling setState() directly within an effect
-  322 |   }, [loadLessonContent]);
-  323 |
-  324 |   useEffect(() => {  react-hooks/set-state-in-effect
-  325:5   error    Error: Calling setState synchronously within an effect can trigger cascading renders
+## Phase 3 — Finaliser le parcours étudiant
 
-Effects are intended to synchronize state between React and external systems such as manually updating the DOM, state management libraries, or other platform APIs. In general, the body of an effect should do one or both of the following:
-* Update external systems with the latest state from React.
-* Subscribe for updates from some external system, calling setState in a callback function when external state changes.
+- Parcourir le catalogue public et les détails des programmes.
+- Vérifier l'inscription, le choix d'une cohorte et des créneaux disponibles.
+- Vérifier les règles de capacité des classes et l'affectation obligatoire d'un instructeur.
+- Finaliser le suivi des inscriptions et des paiements hors ligne.
+- Vérifier les confirmations et les différents états d'une inscription.
 
-Calling setState synchronously within an effect body causes cascading renders that can hurt performance, and is not recommended. (https://react.dev/learn/you-might-not-need-an-effect).
+## Phase 4 — Vérifier l'authentification et la sécurité
 
-  323 |
-  324 |   useEffect(() => {
-> 325 |     loadQuestions().catch((err) => setError(err.message));
-      |     ^^^^^^^^^^^^^ Avoid calling setState() directly within an effect
-  326 |   }, [loadQuestions]);
-  327 |
-  328 |   function resetModuleForm() {   react-hooks/set-state-in-effect
-  720:18  error    'toggleQuestion' is defined but never used                                                                                              no-unused-vars
+- Inscription, connexion et réinitialisation du mot de passe.
+- Contrôle des rôles étudiant, instructeur et administrateur.
+- Protection des routes et validation des données côté serveur.
+- Vérification des erreurs API, des sessions ou jetons et des accès non autorisés.
 
-C:\Users\lenovo\Solyce\client\src\instructor\Assessments.jsx
-  105:5  error    Error: Calling setState synchronously within an effect can trigger cascading renders
+## Phase 5 — Finition de l'interface et de l'expérience utilisateur
 
-Effects are intended to synchronize state between React and external systems such as manually updating the DOM, state management libraries, or other platform APIs. In general, the body of an effect should do one or both of the following:
-* Update external systems with the latest state from React.
-* Subscribe for updates from some external system, calling setState in a callback function when external state changes.
+- Harmoniser les pages et les composants existants.
+- Corriger les problèmes de responsive design, de navigation et de formulaires.
+- Ajouter des états de chargement, des messages de succès et des erreurs compréhensibles.
+- Vérifier l'affichage sur ordinateur et mobile.
 
-Calling setState synchronously within an effect body causes cascading renders that can hurt performance, and is not recommended. (https://react.dev/learn/you-might-not-need-an-effect).
+Nous corrigerons les défauts constatés, sans refaire les écrans qui fonctionnent déjà.
 
-  103 |
-  104 |   useEffect(() => {
-> 105 |     loadAssessments();
-      |     ^^^^^^^^^^^^^^^ Avoid calling setState() directly within an effect
-  106 |   }, [loadAssessments]);
-  107 |
-  108 |   const loadAttempts = useCallback(async (assessment) => {  react-hooks/set-state-in-effect
-  154:9  warning  The 'questions' logical expression could make the dependencies of useMemo Hook (at line 162) change on every render. To fix this, wrap the initialization of 'questions' in its own useMemo() Hook                                                                                        react-hooks/exhaustive-deps
+## Phase 6 — Tests de bout en bout et stabilisation
 
-C:\Users\lenovo\Solyce\client\src\instructor\InstructorLearningContent.jsx
-  168:5  error  Error: Calling setState synchronously within an effect can trigger cascading renders
+- Tester les principaux parcours avec des comptes de chaque rôle.
+- Tester les cas limites : programme rejeté, cohorte complète, paiement en attente, etc.
+- Vérifier les migrations Prisma, la connexion MySQL et les variables d'environnement.
+- Corriger les bugs bloquants et les régressions.
 
-Effects are intended to synchronize state between React and external systems such as manually updating the DOM, state management libraries, or other platform APIs. In general, the body of an effect should do one or both of the following:
-* Update external systems with the latest state from React.
-* Subscribe for updates from some external system, calling setState in a callback function when external state changes.
+## Phase 7 — Préparation au lancement
 
-Calling setState synchronously within an effect body causes cascading renders that can hurt performance, and is not recommended. (https://react.dev/learn/you-might-not-need-an-effect).
-
-  166 |
-  167 |   useEffect(() => {
-> 168 |     setLesson(null);
-      |     ^^^^^^^^^ Avoid calling setState() directly within an effect
-  169 |     setResources([]);
-  170 |     setAssessments([]);
-  171 |     setSelectedAssessmentId(null);  react-hooks/set-state-in-effect
-
-C:\Users\lenovo\Solyce\client\src\instructor\InstructorLearningStudio.jsx
-  120:5  error  Error: Calling setState synchronously within an effect can trigger cascading renders
-
-Effects are intended to synchronize state between React and external systems such as manually updating the DOM, state management libraries, or other platform APIs. In general, the body of an effect should do one or both of the following:
-* Update external systems with the latest state from React.
-* Subscribe for updates from some external system, calling setState in a callback function when external state changes.
-
-Calling setState synchronously within an effect body causes cascading renders that can hurt performance, and is not recommended. (https://react.dev/learn/you-might-not-need-an-effect).
-
-  118 |
-  119 |   useEffect(() => {
-> 120 |     loadCurriculum();
-      |     ^^^^^^^^^^^^^^ Avoid calling setState() directly within an effect
-  121 |   }, [loadCurriculum]);
-  122 |
-  123 |   const selectedModule =  react-hooks/set-state-in-effect
-
-C:\Users\lenovo\Solyce\client\src\instructor\MyCohorts.jsx
-   77:5  error  Error: Calling setState synchronously within an effect can trigger cascading renders
-
-Effects are intended to synchronize state between React and external systems such as manually updating the DOM, state management libraries, or other platform APIs. In general, the body of an effect should do one or both of the following:
-* Update external systems with the latest state from React.
-* Subscribe for updates from some external system, calling setState in a callback function when external state changes.
-
-Calling setState synchronously within an effect body causes cascading renders that can hurt performance, and is not recommended. (https://react.dev/learn/you-might-not-need-an-effect).
-
-  75 |
-  76 |   useEffect(() => {
-> 77 |     setProvider(session.meetingProvider || "");
-     |     ^^^^^^^^^^^ Avoid calling setState() directly within an effect
-  78 |     setUrl(session.meetingUrl || "");
-  79 |   }, [session.meetingProvider, session.meetingUrl]);
-  80 |  react-hooks/set-state-in-effect
-  371:5  error  Error: Calling setState synchronously within an effect can trigger cascading renders
-
-Effects are intended to synchronize state between React and external systems such as manually updating the DOM, state management libraries, or other platform APIs. In general, the body of an effect should do one or both of the following:
-* Update external systems with the latest state from React.
-* Subscribe for updates from some external system, calling setState in a callback function when external state changes.
-
-Calling setState synchronously within an effect body causes cascading renders that can hurt performance, and is not recommended. (https://react.dev/learn/you-might-not-need-an-effect).
-
-  369 |
-  370 |   useEffect(() => {
-> 371 |     loadCohorts();
-      |     ^^^^^^^^^^^ Avoid calling setState() directly within an effect
-  372 |   }, [loadCohorts]);
-  373 |
-  374 |   async function openCohort(id) {                                                            react-hooks/set-state-in-effect
-
-C:\Users\lenovo\Solyce\client\src\student\StudentAssessments.jsx
-  198:6  warning  React Hook useEffect has a missing dependency: 'active'. Either include it or remove the dependency array                                                                        react-hooks/exhaustive-deps
-  220:5  error    Error: Calling setState synchronously within an effect can trigger cascading renders
-
-Effects are intended to synchronize state between React and external systems such as manually updating the DOM, state management libraries, or other platform APIs. In general, the body of an effect should do one or both of the following:
-* Update external systems with the latest state from React.
-* Subscribe for updates from some external system, calling setState in a callback function when external state changes.
-
-Calling setState synchronously within an effect body causes cascading renders that can hurt performance, and is not recommended. (https://react.dev/learn/you-might-not-need-an-effect).
-
-  219 |   useEffect(() => {
-> 220 |     loadLearning();
-      |     ^^^^^^^^^^^^ Avoid calling setState() directly within an effect
-  221 |   }, [loadLearning]);
-  222 |
-  223 |   const assessments = sessions.flatMap((session) =>  react-hooks/set-state-in-effect
-
-✖ 14 problems (11 errors, 3 warnings)
-
-Environment variables loaded from .env
-Error: Could not load `--schema` from provided path `prisma\schema.prisma`: file or directory not found
-PS C:\Users\lenovo\Solyce> 
-PS C:\Users\lenovo\Solyce> 
+- Vérifier les configurations de production du frontend et du backend.
+- Vérifier la base Aiven, les variables secrètes, les URL et les paramètres CORS.
+- Déployer, tester les fonctionnalités sur la version en ligne et corriger les éventuels problèmes.
+- Préparer les données initiales et effectuer une dernière vérification avant ouverture aux utilisateurs. ... Si les résultats des commandes powershell partagés plus haut sont satisfaisantes, nous en avons donc fini avec la phase 2.3 et passons à la phase 2.4. Tu peux toujours vérifier le dépot actuelle du github

@@ -136,12 +136,17 @@ function handleError(res, error, operation) {
   }
 
   console.error(`${operation} failed:`, error.message);
+
   return fail(
     res,
     500,
     "INTERNAL_SERVER_ERROR",
     "Unable to complete this operation.",
   );
+}
+
+function isPublishingUnapprovedProgram(isPublished, approvalStatus) {
+  return isPublished === true && approvalStatus !== "APPROVED";
 }
 
 // -----------------------------------------------------------------------------
@@ -151,6 +156,7 @@ function handleError(res, error, operation) {
 // GET /api/admin/learning-content/resources?lessonId=1
 router.get("/resources", requireAdmin, async (req, res) => {
   const lessonId = parseId(req.query.lessonId);
+
   if (!lessonId) {
     return fail(
       res,
@@ -175,17 +181,48 @@ router.get("/resources", requireAdmin, async (req, res) => {
 // POST /api/admin/learning-content/resources
 router.post("/resources", requireSameOrigin, requireAdmin, async (req, res) => {
   const parsed = resourceSchema.safeParse(req.body);
-  if (!parsed.success) return validationError(res, parsed.error);
+
+  if (!parsed.success) {
+    return validationError(res, parsed.error);
+  }
 
   try {
     const lesson = await prisma.lesson.findUnique({
       where: { id: parsed.data.lessonId },
-      select: { id: true },
+      select: {
+        id: true,
+        module: {
+          select: {
+            course: {
+              select: { approvalStatus: true },
+            },
+          },
+        },
+      },
     });
 
-    if (!lesson) return fail(res, 404, "LESSON_NOT_FOUND", "Lesson not found.");
+    if (!lesson) {
+      return fail(res, 404, "LESSON_NOT_FOUND", "Lesson not found.");
+    }
 
-    const data = await prisma.learningResource.create({ data: parsed.data });
+    if (
+      isPublishingUnapprovedProgram(
+        parsed.data.isPublished,
+        lesson.module.course.approvalStatus,
+      )
+    ) {
+      return fail(
+        res,
+        409,
+        "COURSE_NOT_APPROVED",
+        "Resources can only be published after the course has been approved.",
+      );
+    }
+
+    const data = await prisma.learningResource.create({
+      data: parsed.data,
+    });
+
     return res.status(201).json({ data });
   } catch (error) {
     return handleError(res, error, "Admin resource creation");
@@ -199,25 +236,64 @@ router.patch(
   requireAdmin,
   async (req, res) => {
     const id = parseId(req.params.id);
-    if (!id)
+
+    if (!id) {
       return fail(
         res,
         400,
         "INVALID_RESOURCE_ID",
         "Provide a valid resource ID.",
       );
+    }
 
     const parsed = resourceUpdateSchema.safeParse(req.body);
-    if (!parsed.success) return validationError(res, parsed.error);
+
+    if (!parsed.success) {
+      return validationError(res, parsed.error);
+    }
 
     try {
       const existing = await prisma.learningResource.findUnique({
         where: { id },
-        select: { id: true },
+        select: {
+          id: true,
+          isPublished: true,
+          lesson: {
+            select: {
+              module: {
+                select: {
+                  course: {
+                    select: { approvalStatus: true },
+                  },
+                },
+              },
+            },
+          },
+        },
       });
 
-      if (!existing)
+      if (!existing) {
         return fail(res, 404, "RESOURCE_NOT_FOUND", "Resource not found.");
+      }
+
+      const nextIsPublished =
+        parsed.data.isPublished === undefined
+          ? existing.isPublished
+          : parsed.data.isPublished;
+
+      if (
+        isPublishingUnapprovedProgram(
+          nextIsPublished,
+          existing.lesson.module.course.approvalStatus,
+        )
+      ) {
+        return fail(
+          res,
+          409,
+          "COURSE_NOT_APPROVED",
+          "Resources can only be published after the course has been approved.",
+        );
+      }
 
       const data = await prisma.learningResource.update({
         where: { id },
@@ -238,6 +314,7 @@ router.patch(
 // GET /api/admin/learning-content/assessments?lessonId=1
 router.get("/assessments", requireAdmin, async (req, res) => {
   const lessonId = parseId(req.query.lessonId);
+
   if (!lessonId) {
     return fail(
       res,
@@ -270,7 +347,10 @@ router.post(
   requireAdmin,
   async (req, res) => {
     const parsed = assessmentSchema.safeParse(req.body);
-    if (!parsed.success) return validationError(res, parsed.error);
+
+    if (!parsed.success) {
+      return validationError(res, parsed.error);
+    }
 
     const input = parsed.data;
 
@@ -290,11 +370,35 @@ router.post(
     try {
       const lesson = await prisma.lesson.findUnique({
         where: { id: input.lessonId },
-        select: { id: true },
+        select: {
+          id: true,
+          module: {
+            select: {
+              course: {
+                select: { approvalStatus: true },
+              },
+            },
+          },
+        },
       });
 
-      if (!lesson)
+      if (!lesson) {
         return fail(res, 404, "LESSON_NOT_FOUND", "Lesson not found.");
+      }
+
+      if (
+        isPublishingUnapprovedProgram(
+          input.isPublished,
+          lesson.module.course.approvalStatus,
+        )
+      ) {
+        return fail(
+          res,
+          409,
+          "COURSE_NOT_APPROVED",
+          "Assessments can only be published after the course has been approved.",
+        );
+      }
 
       const data = await prisma.assessment.create({
         data: {
@@ -317,25 +421,66 @@ router.patch(
   requireAdmin,
   async (req, res) => {
     const id = parseId(req.params.id);
-    if (!id)
+
+    if (!id) {
       return fail(
         res,
         400,
         "INVALID_ASSESSMENT_ID",
         "Provide a valid assessment ID.",
       );
+    }
 
     const parsed = assessmentUpdateSchema.safeParse(req.body);
-    if (!parsed.success) return validationError(res, parsed.error);
+
+    if (!parsed.success) {
+      return validationError(res, parsed.error);
+    }
 
     try {
       const existing = await prisma.assessment.findUnique({
         where: { id },
-        select: { id: true, maxScore: true, passingScore: true },
+        select: {
+          id: true,
+          maxScore: true,
+          passingScore: true,
+          isPublished: true,
+          lesson: {
+            select: {
+              module: {
+                select: {
+                  course: {
+                    select: { approvalStatus: true },
+                  },
+                },
+              },
+            },
+          },
+        },
       });
 
-      if (!existing)
+      if (!existing) {
         return fail(res, 404, "ASSESSMENT_NOT_FOUND", "Assessment not found.");
+      }
+
+      const nextIsPublished =
+        parsed.data.isPublished === undefined
+          ? existing.isPublished
+          : parsed.data.isPublished;
+
+      if (
+        isPublishingUnapprovedProgram(
+          nextIsPublished,
+          existing.lesson.module.course.approvalStatus,
+        )
+      ) {
+        return fail(
+          res,
+          409,
+          "COURSE_NOT_APPROVED",
+          "Assessments can only be published after the course has been approved.",
+        );
+      }
 
       const maxScore =
         parsed.data.maxScore === undefined
@@ -357,6 +502,7 @@ router.patch(
       }
 
       const updateData = { ...parsed.data };
+
       if (parsed.data.dueAt !== undefined) {
         updateData.dueAt = parsed.data.dueAt
           ? new Date(parsed.data.dueAt)
@@ -385,6 +531,7 @@ router.get(
   requireAdmin,
   async (req, res) => {
     const assessmentId = parseId(req.params.assessmentId);
+
     if (!assessmentId) {
       return fail(
         res,
@@ -410,7 +557,10 @@ router.get(
 // POST /api/admin/learning-content/questions
 router.post("/questions", requireSameOrigin, requireAdmin, async (req, res) => {
   const parsed = questionSchema.safeParse(req.body);
-  if (!parsed.success) return validationError(res, parsed.error);
+
+  if (!parsed.success) {
+    return validationError(res, parsed.error);
+  }
 
   try {
     const assessment = await prisma.assessment.findUnique({
@@ -418,10 +568,14 @@ router.post("/questions", requireSameOrigin, requireAdmin, async (req, res) => {
       select: { id: true, maxScore: true },
     });
 
-    if (!assessment)
+    if (!assessment) {
       return fail(res, 404, "ASSESSMENT_NOT_FOUND", "Assessment not found.");
+    }
 
-    const data = await prisma.assessmentQuestion.create({ data: parsed.data });
+    const data = await prisma.assessmentQuestion.create({
+      data: parsed.data,
+    });
+
     return res.status(201).json({ data });
   } catch (error) {
     return handleError(res, error, "Admin question creation");
@@ -435,16 +589,21 @@ router.patch(
   requireAdmin,
   async (req, res) => {
     const id = parseId(req.params.id);
-    if (!id)
+
+    if (!id) {
       return fail(
         res,
         400,
         "INVALID_QUESTION_ID",
         "Provide a valid question ID.",
       );
+    }
 
     const parsed = questionUpdateSchema.safeParse(req.body);
-    if (!parsed.success) return validationError(res, parsed.error);
+
+    if (!parsed.success) {
+      return validationError(res, parsed.error);
+    }
 
     try {
       const existing = await prisma.assessmentQuestion.findUnique({
@@ -452,8 +611,9 @@ router.patch(
         select: { id: true },
       });
 
-      if (!existing)
+      if (!existing) {
         return fail(res, 404, "QUESTION_NOT_FOUND", "Question not found.");
+      }
 
       const data = await prisma.assessmentQuestion.update({
         where: { id },
