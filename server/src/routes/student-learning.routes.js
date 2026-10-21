@@ -101,7 +101,12 @@ router.get("/", requireStudent, async (req, res) => {
         status: { not: "CANCELLED" },
         lesson: {
           isPublished: true,
-          module: { isPublished: true },
+          module: {
+            isPublished: true,
+            course: {
+              isPublished: true,
+            },
+          },
         },
       },
       orderBy: { scheduledAt: "asc" },
@@ -256,7 +261,12 @@ router.get("/sessions/:id", requireStudent, async (req, res) => {
         },
         lesson: {
           isPublished: true,
-          module: { isPublished: true },
+          module: {
+            isPublished: true,
+            course: {
+              isPublished: true,
+            },
+          },
         },
       },
       include: {
