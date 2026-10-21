@@ -807,6 +807,9 @@ export default function StudentApp() {
                     </button>
                   </div>
                 </div>
+                <div className="student-welcome-image" aria-hidden="true">
+                  <img src="/images/student3.jpg" alt="" fetchPriority="high" />
+                </div>
               </section>
               <section className="student-dashboard-grid">
                 <div className="student-panel student-program-panel">
