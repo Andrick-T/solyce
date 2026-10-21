@@ -157,8 +157,10 @@ export default function InstructorLearningContent({
           ? current
           : (nextAssessments[0]?.id ?? null),
       );
+      return true;
     } catch (err) {
       setError(errorMessage(err));
+      return false;
     } finally {
       setLoading(false);
     }
@@ -223,10 +225,12 @@ export default function InstructorLearningContent({
         });
       }
 
-      await loadContent();
+      const refreshed = await loadContent();
       resetResource();
       setNotice(
-        "Resource saved. It remains unpublished until administrator review.",
+        refreshed
+          ? "Resource saved. It remains unpublished until administrator review."
+          : "Resource saved, but the list could not be refreshed. Please try Refresh.",
       );
     } catch (err) {
       setError(errorMessage(err));
@@ -310,11 +314,13 @@ export default function InstructorLearningContent({
         saved = result.data;
       }
 
-      await loadContent();
+      const refreshed = await loadContent();
       if (saved?.id) setSelectedAssessmentId(saved.id);
       resetAssessment();
       setNotice(
-        "Assessment saved. It remains unpublished until administrator review.",
+        refreshed
+          ? "Assessment saved. It remains unpublished until administrator review."
+          : "Assessment saved, but the list could not be refreshed. Please try Refresh.",
       );
     } catch (err) {
       setError(errorMessage(err));
@@ -414,9 +420,13 @@ export default function InstructorLearningContent({
         });
       }
 
-      await loadContent();
+      const refreshed = await loadContent();
       resetQuestion();
-      setNotice("Question saved.");
+      setNotice(
+        refreshed
+          ? "Question saved."
+          : "Question saved, but the list could not be refreshed. Please try Refresh.",
+      );
     } catch (err) {
       setError(errorMessage(err));
     } finally {
