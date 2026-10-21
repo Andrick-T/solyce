@@ -127,7 +127,16 @@ router.patch("/:id", requireSameOrigin, async (req, res) => {
 
       if (!payment) return { error: "NOT_FOUND" };
 
-      if (payment.status === "REFUNDED") return { error: "REFUNDED" };
+      if (payment.status === "REFUNDED") {
+        return { error: "REFUNDED" };
+      }
+
+      if (
+        input.status === "VERIFIED" &&
+        payment.enrollment.status === "CANCELLED"
+      ) {
+        return { error: "ENROLLMENT_CANCELLED" };
+      }
 
       if (
         input.status === "VERIFIED" &&
@@ -151,19 +160,41 @@ router.patch("/:id", requireSameOrigin, async (req, res) => {
         },
       });
 
-      if (isVerified) {
-        await tx.enrollment.update({
-          where: { id: payment.enrollmentId },
-          data: {
-            status: "CONFIRMED",
-            confirmedAt: new Date(),
-            cancelledAt: null,
-          },
-        });
-      } else if (
-        input.status === "REJECTED" &&
-        payment.enrollment.status === "CONFIRMED"
-      ) {
+      const otherVerifiedPayments = await tx.payment.findMany({
+        where: {
+          enrollmentId: payment.enrollmentId,
+          id: { not: id },
+          status: "VERIFIED",
+        },
+        select: {
+          expectedAmountXaf: true,
+          receivedAmountXaf: true,
+        },
+      });
+
+      const hasOtherVerifiedPayment = otherVerifiedPayments.some(
+        (otherPayment) =>
+          otherPayment.receivedAmountXaf >= otherPayment.expectedAmountXaf,
+      );
+
+      const hasValidVerifiedPayment =
+        (isVerified &&
+          updatedPayment.receivedAmountXaf >=
+            updatedPayment.expectedAmountXaf) ||
+        hasOtherVerifiedPayment;
+
+      if (hasValidVerifiedPayment) {
+        if (payment.enrollment.status !== "CANCELLED") {
+          await tx.enrollment.update({
+            where: { id: payment.enrollmentId },
+            data: {
+              status: "CONFIRMED",
+              confirmedAt: payment.enrollment.confirmedAt || new Date(),
+              cancelledAt: null,
+            },
+          });
+        }
+      } else if (payment.enrollment.status === "CONFIRMED") {
         await tx.enrollment.update({
           where: { id: payment.enrollmentId },
           data: {
@@ -171,6 +202,19 @@ router.patch("/:id", requireSameOrigin, async (req, res) => {
             confirmedAt: null,
           },
         });
+      } else if (
+        input.status === "REJECTED" ||
+        input.status === "UNDER_REVIEW"
+      ) {
+        if (payment.enrollment.status !== "CANCELLED") {
+          await tx.enrollment.update({
+            where: { id: payment.enrollmentId },
+            data: {
+              status: "PAYMENT_UNDER_REVIEW",
+              confirmedAt: null,
+            },
+          });
+        }
       }
 
       return { payment: updatedPayment };
@@ -179,6 +223,7 @@ router.patch("/:id", requireSameOrigin, async (req, res) => {
     if (result.error === "NOT_FOUND") {
       return fail(res, 404, "PAYMENT_NOT_FOUND", "Payment not found.");
     }
+
     if (result.error === "REFUNDED") {
       return fail(
         res,
@@ -187,6 +232,16 @@ router.patch("/:id", requireSameOrigin, async (req, res) => {
         "A refunded payment cannot be edited.",
       );
     }
+
+    if (result.error === "ENROLLMENT_CANCELLED") {
+      return fail(
+        res,
+        409,
+        "ENROLLMENT_CANCELLED",
+        "A payment cannot confirm an enrollment that has been cancelled.",
+      );
+    }
+
     if (result.error === "AMOUNT_INSUFFICIENT") {
       return fail(
         res,
