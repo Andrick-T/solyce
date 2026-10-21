@@ -468,3 +468,10 @@ model PasswordResetToken {
   @@index([userId, expiresAt])
   @@map("password_reset_tokens")
 }
+model SolyceSession {
+  sessionId String  @id @map("session_id") @db.VarChar(128)
+  expires   Int     @db.UnsignedInt
+  data      String? @db.MediumText
+
+  @@map("solyce_sessions")
+}
