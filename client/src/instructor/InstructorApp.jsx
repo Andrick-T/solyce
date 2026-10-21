@@ -41,6 +41,37 @@ function Brand() {
   );
 }
 
+function InstructorAuthEditorial() {
+  return (
+    <aside className="instructor-auth-editorial">
+      <a className="instructor-auth-editorial-brand" href="/">
+        solyce<span>.</span>
+      </a>
+
+      <div className="instructor-auth-editorial-content">
+        <p className="instructor-auth-editorial-eyebrow">
+          THE PEOPLE BEHIND EVERY LESSON
+        </p>
+
+        <h2>
+          Teach with purpose.
+          <em> Help learners move forward.</em>
+        </h2>
+
+        <p>
+          A dedicated space to guide your classes, support your students and
+          make every learning session count.
+        </p>
+      </div>
+
+      <div className="instructor-auth-editorial-footer">
+        <span className="instructor-auth-editorial-mark">S.</span>
+        <span>Language learning, with direction.</span>
+      </div>
+    </aside>
+  );
+}
+
 function formatDate(value) {
   if (!value) return "Not scheduled";
 
@@ -139,10 +170,14 @@ export default function InstructorApp() {
   if (loading) {
     return (
       <div className="instructor-auth-screen">
-        <div className="instructor-auth-card">
+        <InstructorAuthEditorial />
+
+        <section className="instructor-auth-card">
           <Brand />
-          <p>Checking your instructor session…</p>
-        </div>
+          <p className="instructor-eyebrow">INSTRUCTOR WORKSPACE</p>
+          <h1>Preparing your workspace.</h1>
+          <p className="instructor-muted">Checking your instructor session…</p>
+        </section>
       </div>
     );
   }
@@ -150,13 +185,16 @@ export default function InstructorApp() {
   if (!user) {
     return (
       <div className="instructor-auth-screen">
+        <InstructorAuthEditorial />
+
         <section className="instructor-auth-card">
           <Brand />
+
           <p className="instructor-eyebrow">INSTRUCTOR WORKSPACE</p>
-          <h1>Teach with purpose.</h1>
+          <h1>Welcome back.</h1>
           <p className="instructor-muted">
             Sign in with the instructor account provided by your Solyce
-            administrator.
+            administrator to manage your classes and support your learners.
           </p>
 
           {error && (
@@ -190,13 +228,13 @@ export default function InstructorApp() {
             </label>
 
             <button className="instructor-primary-button" disabled={busy}>
-              {busy ? "Signing in…" : "Sign in to your workspace"}{" "}
+              {busy ? "Signing in…" : "Sign in to your workspace"}
               <span>→</span>
             </button>
           </form>
 
           <a className="instructor-back-link" href="/">
-            ← Back to Solyce
+            ← Back to Solyce website
           </a>
         </section>
       </div>

@@ -181,20 +181,52 @@ function Login({ onLogin }) {
       setBusy(false);
     }
   }
+
   return (
     <main className="admin-login-page">
-      <div className="admin-login-card">
+      <aside className="admin-auth-editorial">
+        <a className="admin-auth-editorial-brand" href="/">
+          solyce<span>.</span>
+        </a>
+
+        <div className="admin-auth-editorial-content">
+          <p className="admin-auth-editorial-eyebrow">
+            BEHIND EVERY LEARNING JOURNEY
+          </p>
+
+          <h2>
+            Lead with clarity.
+            <em> Build meaningful progress.</em>
+          </h2>
+
+          <p>
+            A dedicated space to manage learning programs, coordinate
+            instructors and create a better experience for every learner.
+          </p>
+        </div>
+
+        <div className="admin-auth-editorial-footer">
+          <span className="admin-auth-editorial-mark">S.</span>
+          <span>Language learning, with direction.</span>
+        </div>
+      </aside>
+
+      <section className="admin-login-card">
         <div className="admin-login-brand">
           <Mark />
           <span>
             solyce<span className="admin-dot">.</span>
           </span>
         </div>
+
         <p className="admin-eyebrow">ADMINISTRATION PORTAL</p>
-        <h1>Good work starts with clarity.</h1>
+
+        <h1>Welcome back.</h1>
+
         <p className="admin-login-intro">
           Sign in to manage programs, cohorts and the learning experience.
         </p>
+
         <form onSubmit={submit} className="admin-form">
           <label>
             Email address
@@ -207,6 +239,7 @@ function Login({ onLogin }) {
               placeholder="you@solyce.com"
             />
           </label>
+
           <label>
             Password
             <input
@@ -218,20 +251,31 @@ function Login({ onLogin }) {
               placeholder="Enter your password"
             />
           </label>
+
           {error && (
             <div className="admin-alert" role="alert">
               {error}
             </div>
           )}
-          <button className="admin-button primary full" disabled={busy}>
-            {busy ? "Signing in…" : "Sign in to Solyce"}
-            <span>↗</span>
+
+          <button
+            type="submit"
+            className="admin-button primary full"
+            disabled={busy}
+          >
+            {busy ? "Signing in…" : "Sign in to your workspace"}
+            <span>→</span>
           </button>
         </form>
+
         <p className="admin-login-foot">
           Secure access for authorised Solyce administrators.
         </p>
-      </div>
+
+        <a className="admin-auth-back-link" href="/">
+          ← Back to Solyce website
+        </a>
+      </section>
     </main>
   );
 }
