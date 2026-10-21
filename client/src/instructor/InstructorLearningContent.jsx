@@ -165,16 +165,12 @@ export default function InstructorLearningContent({
   }, [lessonId]);
 
   useEffect(() => {
-    setLesson(null);
-    setResources([]);
-    setAssessments([]);
-    setSelectedAssessmentId(null);
-    setResourceFormOpen(false);
-    setAssessmentFormOpen(false);
-    setQuestionFormOpen(false);
-    setError("");
-    setNotice("");
-    loadContent();
+    // Avoid calling setState synchronously in effect body
+    // Use microtask to defer loadContent
+    const id = setTimeout(() => {
+      loadContent();
+    }, 0);
+    return () => clearTimeout(id);
   }, [loadContent]);
 
   function resetResource() {

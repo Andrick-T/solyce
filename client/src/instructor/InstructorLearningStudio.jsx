@@ -78,13 +78,11 @@ export default function InstructorLearningStudio({ program, onBack }) {
   const [lessonViewOpen, setLessonViewOpen] = useState(false);
 
   const loadCurriculum = useCallback(async () => {
-    setLoading(true);
-    setError("");
-
     try {
       const result = await request(
         `/modules?courseId=${encodeURIComponent(program.id)}`,
       );
+      setError("");
 
       const resultCourse = result.course ?? program;
       const nextModules = Array.isArray(result.data)
@@ -117,7 +115,10 @@ export default function InstructorLearningStudio({ program, onBack }) {
   }, [program]);
 
   useEffect(() => {
-    loadCurriculum();
+    const scheduledLoad = Promise.resolve().then(loadCurriculum);
+    return () => {
+      void scheduledLoad;
+    };
   }, [loadCurriculum]);
 
   const selectedModule =
@@ -391,6 +392,7 @@ export default function InstructorLearningStudio({ program, onBack }) {
           type="button"
           className="instructor-secondary-button"
           onClick={() => {
+            setLoading(true);
             setError("");
             loadCurriculum();
           }}
