@@ -702,3 +702,70 @@
     width: 100%;
   }
 }
+/* Assessments — mobile usability refinements */
+
+@media (max-width: 600px) {
+  .assessments-grid {
+    gap: 12px;
+  }
+
+  .assessment-card {
+    min-width: 0;
+    padding: 17px;
+  }
+
+  .assessment-card h3,
+  .assessments-detail-heading h2 {
+    overflow-wrap: anywhere;
+  }
+
+  .assessments-table-wrap {
+    max-width: 100%;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .assessments-table {
+    min-width: 620px;
+  }
+
+  .assessments-detail-heading {
+    align-items: flex-start;
+  }
+
+  .assessments-attempt-meta {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 12px;
+  }
+
+  .assessments-question-heading {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .assessments-total-score {
+    width: 100%;
+    box-sizing: border-box;
+  }
+
+  .assessments-question-card {
+    min-width: 0;
+    padding: 16px;
+  }
+
+  .assessments-question-card h4,
+  .assessments-answer-block p,
+  .assessments-correct-answer p {
+    overflow-wrap: anywhere;
+  }
+
+  .assessments-feedback-panel textarea {
+    box-sizing: border-box;
+    width: 100%;
+    max-width: 100%;
+  }
+
+  .assessments-submit-row button {
+    width: 100%;
+  }
+}

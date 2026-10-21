@@ -347,7 +347,11 @@ router.get("/attempts/:id", async (req, res) => {
       },
     });
 
-    if (!attempt) {
+    if (
+      !attempt ||
+      attempt.enrollment.cohort.courseId !==
+        attempt.assessment.lesson.module.course.id
+    ) {
       return fail(res, 404, "ATTEMPT_NOT_FOUND", "Attempt not found.");
     }
 
@@ -441,10 +445,36 @@ router.patch("/attempts/:id/grade", requireSameOrigin, async (req, res) => {
               questions: {
                 orderBy: { position: "asc" },
               },
+              lesson: {
+                select: {
+                  module: {
+                    select: {
+                      course: {
+                        select: { id: true },
+                      },
+                    },
+                  },
+                },
+              },
+            },
+          },
+          enrollment: {
+            include: {
+              cohort: {
+                select: { courseId: true },
+              },
             },
           },
         },
       });
+
+      if (
+        !attempt ||
+        attempt.enrollment.cohort.courseId !==
+          attempt.assessment.lesson.module.course.id
+      ) {
+        return { error: "NOT_GRADEABLE" };
+      }
 
       if (!attempt) return { error: "NOT_GRADEABLE" };
 
