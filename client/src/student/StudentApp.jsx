@@ -446,10 +446,8 @@ export default function StudentApp() {
       </div>
     );
 
-  const activeCount = enrollments.filter((e) =>
-    ["CONFIRMED", "AWAITING_PAYMENT", "PAYMENT_UNDER_REVIEW"].includes(
-      e.status,
-    ),
+  const activeCount = enrollments.filter(
+    (enrollment) => !["CANCELLED", "WAITLISTED"].includes(enrollment.status),
   ).length;
   const currentLetter =
     (user.fullName || "S").trim().charAt(0).toUpperCase() || "S";
