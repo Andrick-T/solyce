@@ -100,6 +100,32 @@ const courseSelect = {
   },
 };
 
+const courseDetailSelect = {
+  ...courseSelect,
+  modules: {
+    where: { isPublished: true },
+    orderBy: { position: "asc" },
+    select: {
+      id: true,
+      title: true,
+      description: true,
+      position: true,
+      lessons: {
+        where: { isPublished: true },
+        orderBy: { position: "asc" },
+        select: {
+          id: true,
+          title: true,
+          description: true,
+          objectives: true,
+          estimatedMinutes: true,
+          position: true,
+        },
+      },
+    },
+  },
+};
+
 // GET /api/courses
 // Returns published courses and their upcoming bookable cohorts.
 router.get("/courses", async (_req, res) => {
@@ -145,7 +171,7 @@ router.get("/courses/:slug", async (req, res) => {
         slug: parsedSlug.data,
         isPublished: true,
       },
-      select: courseSelect,
+      select: courseDetailSelect,
     });
 
     if (!course) {

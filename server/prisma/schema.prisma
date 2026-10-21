@@ -44,6 +44,16 @@ model Course {
   isPublished     Boolean        @default(false)
   createdAt       DateTime       @default(now())
   updatedAt       DateTime       @updatedAt
+  
+  prerequisites     String? @db.Text
+  targetAudience    String? @db.Text
+  learningOutcomes  String? @db.Text
+  courseBenefits    String? @db.Text
+  solyceAdvantages  String? @db.Text
+  certifications    String? @db.Text
+  practicalProjects String? @db.Text
+  careerOutcomes    String? @db.Text
+
 
   cohorts Cohort[]
   modules CourseModule[]

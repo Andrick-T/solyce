@@ -21,6 +21,16 @@ const courseFields = {
   examType: z.string().trim().min(1).max(50),
   durationWeeks: z.number().int().min(1).max(104),
   curriculum: z.string().max(30000).nullable().optional(),
+
+  prerequisites: true,
+  targetAudience: true,
+  learningOutcomes: true,
+  courseBenefits: true,
+  solyceAdvantages: true,
+  certifications: true,
+  practicalProjects: true,
+  careerOutcomes: true,
+
   priceXaf: z.number().int().min(0).max(100000000),
   isPublished: z.boolean(),
 };

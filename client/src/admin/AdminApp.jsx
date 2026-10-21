@@ -25,6 +25,16 @@ const initialCourse = {
   examType: "TCF",
   durationWeeks: 12,
   curriculum: "",
+
+  prerequisites: "",
+  targetAudience: "",
+  learningOutcomes: "",
+  courseBenefits: "",
+  solyceAdvantages: "",
+  certifications: "",
+  practicalProjects: "",
+  careerOutcomes: "",
+
   priceXaf: 0,
   isPublished: false,
 };
@@ -719,6 +729,16 @@ export default function AdminApp() {
             examType: course.examType,
             durationWeeks: course.durationWeeks,
             curriculum: course.curriculum || "",
+
+            prerequisites: course.prerequisites || "",
+            targetAudience: course.targetAudience || "",
+            learningOutcomes: course.learningOutcomes || "",
+            courseBenefits: course.courseBenefits || "",
+            solyceAdvantages: course.solyceAdvantages || "",
+            certifications: course.certifications || "",
+            practicalProjects: course.practicalProjects || "",
+            careerOutcomes: course.careerOutcomes || "",
+
             priceXaf: course.priceXaf,
             isPublished: course.isPublished,
           }
@@ -2054,6 +2074,115 @@ export default function AdminApp() {
                 }
               />
             </Field>
+
+            <Field label="Prerequisites (one item per line)" wide>
+              <textarea
+                rows="3"
+                value={courseModal.form.prerequisites}
+                onChange={(e) =>
+                  setCourseModal((m) => ({
+                    ...m,
+                    form: { ...m.form, prerequisites: e.target.value },
+                  }))
+                }
+                placeholder={"Basic computer skills\nB1 French level"}
+              />
+            </Field>
+
+            <Field label="Target audience (one profile per line)" wide>
+              <textarea
+                rows="3"
+                value={courseModal.form.targetAudience}
+                onChange={(e) =>
+                  setCourseModal((m) => ({
+                    ...m,
+                    form: { ...m.form, targetAudience: e.target.value },
+                  }))
+                }
+              />
+            </Field>
+
+            <Field label="Learning outcomes (one skill per line)" wide>
+              <textarea
+                rows="4"
+                value={courseModal.form.learningOutcomes}
+                onChange={(e) =>
+                  setCourseModal((m) => ({
+                    ...m,
+                    form: { ...m.form, learningOutcomes: e.target.value },
+                  }))
+                }
+              />
+            </Field>
+
+            <Field label="Why take this program? (one benefit per line)" wide>
+              <textarea
+                rows="4"
+                value={courseModal.form.courseBenefits}
+                onChange={(e) =>
+                  setCourseModal((m) => ({
+                    ...m,
+                    form: { ...m.form, courseBenefits: e.target.value },
+                  }))
+                }
+              />
+            </Field>
+
+            <Field label="Why choose Solyce? (one advantage per line)" wide>
+              <textarea
+                rows="4"
+                value={courseModal.form.solyceAdvantages}
+                onChange={(e) =>
+                  setCourseModal((m) => ({
+                    ...m,
+                    form: { ...m.form, solyceAdvantages: e.target.value },
+                  }))
+                }
+              />
+            </Field>
+
+            <Field label="Associated certifications (one per line)" wide>
+              <textarea
+                rows="3"
+                value={courseModal.form.certifications}
+                onChange={(e) =>
+                  setCourseModal((m) => ({
+                    ...m,
+                    form: { ...m.form, certifications: e.target.value },
+                  }))
+                }
+                placeholder={
+                  "CompTIA Security+ — exam preparation\nOther certification"
+                }
+              />
+            </Field>
+
+            <Field label="Practical projects (one project per line)" wide>
+              <textarea
+                rows="4"
+                value={courseModal.form.practicalProjects}
+                onChange={(e) =>
+                  setCourseModal((m) => ({
+                    ...m,
+                    form: { ...m.form, practicalProjects: e.target.value },
+                  }))
+                }
+              />
+            </Field>
+
+            <Field label="Career opportunities (one outcome per line)" wide>
+              <textarea
+                rows="3"
+                value={courseModal.form.careerOutcomes}
+                onChange={(e) =>
+                  setCourseModal((m) => ({
+                    ...m,
+                    form: { ...m.form, careerOutcomes: e.target.value },
+                  }))
+                }
+              />
+            </Field>
+
             <label className="admin-publish-toggle">
               <input
                 type="checkbox"
