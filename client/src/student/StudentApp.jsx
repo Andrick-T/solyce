@@ -150,9 +150,12 @@ export default function StudentApp() {
 
   const [learningSessions, setLearningSessions] = useState([]);
   const [learningLoading, setLearningLoading] = useState(false);
+  const [learningError, setLearningError] = useState("");
 
   const [selectedSession, setSelectedSession] = useState(null);
   const [sessionDetailLoading, setSessionDetailLoading] = useState(false);
+  const [sessionDetailError, setSessionDetailError] = useState("");
+  const [requestedSessionId, setRequestedSessionId] = useState(null);
   const [passwordResetMode, setPasswordResetMode] = useState(() =>
     window.location.pathname === "/student/reset-password" ? "confirm" : "",
   );
@@ -162,8 +165,9 @@ export default function StudentApp() {
   const [resetBusy, setResetBusy] = useState(false);
 
   const loadSessionDetail = useCallback(async (sessionId) => {
+    setRequestedSessionId(sessionId);
     setSessionDetailLoading(true);
-    setError("");
+    setSessionDetailError("");
     setSelectedSession(null);
 
     try {
@@ -175,7 +179,7 @@ export default function StudentApp() {
 
       setSelectedSession(result);
     } catch (e) {
-      setError(e.message);
+      setSessionDetailError(e.message);
     } finally {
       setSessionDetailLoading(false);
     }
@@ -183,12 +187,13 @@ export default function StudentApp() {
 
   const loadLearningSessions = useCallback(async () => {
     setLearningLoading(true);
+    setLearningError("");
 
     try {
       const result = await api("/learning");
       setLearningSessions(Array.isArray(result) ? result : []);
     } catch (e) {
-      setError(e.message);
+      setLearningError(e.message);
     } finally {
       setLearningLoading(false);
     }
@@ -234,17 +239,23 @@ export default function StudentApp() {
                 : [],
           );
 
-          return api("/learning").then((learningResult) => {
-            if (!alive) return;
+          return api("/learning")
+            .then((learningResult) => {
+              if (!alive) return;
 
-            setLearningSessions(
-              Array.isArray(learningResult?.data)
-                ? learningResult.data
-                : Array.isArray(learningResult)
-                  ? learningResult
-                  : [],
-            );
-          });
+              setLearningSessions(
+                Array.isArray(learningResult?.data)
+                  ? learningResult.data
+                  : Array.isArray(learningResult)
+                    ? learningResult
+                    : [],
+              );
+
+              setLearningError("");
+            })
+            .catch((e) => {
+              if (alive) setLearningError(e.message);
+            });
         });
       })
       .catch((e) => {
@@ -1255,7 +1266,29 @@ export default function StudentApp() {
                           {learningLoading ? "Refreshing…" : "Refresh ↻"}
                         </button>
                       </div>
-
+                      {sessionDetailError && (
+                        <div className="student-alert" role="alert">
+                          <div>
+                            <strong>We couldn't load this lesson.</strong>
+                            <p>{sessionDetailError}</p>
+                            <button
+                              type="button"
+                              className="student-inline-link"
+                              onClick={() => {
+                                if (requestedSessionId !== null) {
+                                  loadSessionDetail(requestedSessionId);
+                                }
+                              }}
+                              disabled={
+                                sessionDetailLoading ||
+                                requestedSessionId === null
+                              }
+                            >
+                              Try again ↻
+                            </button>
+                          </div>
+                        </div>
+                      )}
                       {learningLoading ? (
                         <EmptyState title="Loading your schedule">
                           Your scheduled lessons are being retrieved.
@@ -1353,6 +1386,21 @@ export default function StudentApp() {
                     <EmptyState title="Loading your resources">
                       Your available course materials are being retrieved.
                     </EmptyState>
+                  ) : learningError ? (
+                    <div className="student-alert" role="alert">
+                      <div>
+                        <strong>We couldn't load your resources.</strong>
+                        <p>{learningError}</p>
+                        <button
+                          type="button"
+                          className="student-inline-link"
+                          onClick={loadLearningSessions}
+                          disabled={learningLoading}
+                        >
+                          Try again ↻
+                        </button>
+                      </div>
+                    </div>
                   ) : (
                     (() => {
                       const sessionsWithResources = learningSessions.filter(

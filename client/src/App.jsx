@@ -1,4 +1,4 @@
-﻿import { useEffect, useMemo, useState } from "react";
+﻿import { useEffect, useMemo, useRef, useState } from "react";
 import "./App.css";
 
 const API_BASE_URL = (
@@ -318,6 +318,22 @@ function CourseDetail({ course, onBack }) {
     .map((item) => item.trim())
     .filter(Boolean);
   const [bookingCohort, setBookingCohort] = useState(null);
+  const bookingSectionRef = useRef(null);
+  useEffect(() => {
+    if (!bookingCohort || !bookingSectionRef.current) return;
+
+    const section = bookingSectionRef.current;
+    const prefersReducedMotion = window.matchMedia(
+      "(prefers-reduced-motion: reduce)",
+    ).matches;
+
+    section.scrollIntoView({
+      behavior: prefersReducedMotion ? "auto" : "smooth",
+      block: "start",
+    });
+
+    section.focus({ preventScroll: true });
+  }, [bookingCohort]);
 
   return (
     <main className="detail-page">
@@ -463,9 +479,11 @@ function CourseDetail({ course, onBack }) {
         </section>
         {bookingCohort && (
           <section
+            ref={bookingSectionRef}
             className="booking-section"
             id="course-booking"
             aria-label="Course booking"
+            tabIndex={-1}
           >
             <BookingForm
               course={course}

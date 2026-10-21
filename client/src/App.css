@@ -2399,3 +2399,12 @@
     animation: none;
   }
 }
+/* Booking section — guided focus and scroll positioning */
+
+.booking-section {
+  scroll-margin-top: 24px;
+}
+
+.booking-section:focus {
+  outline: none;
+}
