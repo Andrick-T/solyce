@@ -75,36 +75,68 @@ function ArrowIcon({ diagonal = false }) {
 }
 
 function CourseCard({ course, onSelect }) {
-  const languageLabel =
-    course.language === "FRENCH" ? "French language" : "English language";
+  const isFrench = course.language === "FRENCH";
+
+  const languageLabel = isFrench ? "French" : "English";
+  const courseImage = isFrench
+    ? "https://images.unsplash.com/photo-1434030216411-0b793f4b4173?auto=format&fit=crop&w=900&q=80"
+    : "https://images.unsplash.com/photo-1524178232363-1fb2b075b655?auto=format&fit=crop&w=900&q=80";
+
+  const imageAlt = isFrench
+    ? "Learner studying with books and notes"
+    : "Students learning together in a classroom";
 
   return (
     <article className="course-card">
-      <div className="course-card-top">
-        <span className="course-category">{course.examType}</span>
-        <span className="course-language">{languageLabel}</span>
+      <div className="course-card-image-wrap">
+        <img
+          className="course-card-image"
+          src={courseImage}
+          alt={imageAlt}
+          loading="lazy"
+          decoding="async"
+        />
+
+        <span className="course-card-image-label">
+          {languageLabel} learning
+        </span>
+
+        <span className="course-card-image-index" aria-hidden="true">
+          S.
+        </span>
       </div>
 
-      <div className="course-card-body">
-        <h3>{course.title}</h3>
-        <p className="course-description">{course.description}</p>
-
-        <div className="course-meta">
-          <span>
-            <span className="meta-dot" />
-            {course.durationWeeks} weeks
+      <div className="course-card-content">
+        <div className="course-card-top">
+          <span className="course-category">
+            {course.examType || "Language program"}
           </span>
-          <span>{formatPrice(course.priceXaf)}</span>
+          <span className="course-language">{languageLabel}</span>
         </div>
-      </div>
 
-      <button
-        className="course-card-link"
-        type="button"
-        onClick={() => onSelect(course)}
-      >
-        Explore program <ArrowIcon />
-      </button>
+        <div className="course-card-body">
+          <h3>{course.title}</h3>
+          <p className="course-description">{course.description}</p>
+
+          <div className="course-meta">
+            <span>
+              <span className="meta-dot" />
+              {course.durationWeeks} weeks
+            </span>
+            <span>{formatPrice(course.priceXaf)}</span>
+          </div>
+        </div>
+
+        <button
+          className="course-card-link"
+          type="button"
+          onClick={() => onSelect(course)}
+          aria-label={`Explore ${course.title}`}
+        >
+          <span>Explore program</span>
+          <ArrowIcon />
+        </button>
+      </div>
     </article>
   );
 }
@@ -927,7 +959,9 @@ function App() {
         </div>
 
         <div className="container footer-bottom">
-          <span>Â© {new Date().getFullYear()} Solyce. All rights reserved.</span>
+          <span>
+            Â© {new Date().getFullYear()} Solyce. All rights reserved.
+          </span>
           <span>Built around your next chapter.</span>
         </div>
       </footer>
@@ -936,4 +970,3 @@ function App() {
 }
 
 export default App;
-
