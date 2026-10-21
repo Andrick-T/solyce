@@ -226,48 +226,57 @@ export default function InstructorApp() {
         </div>
 
         <p className="instructor-nav-label">WORKSPACE</p>
-        <button
-          type="button"
-          className={`instructor-nav-link ${activeView === "overview" ? "active" : ""}`}
-          onClick={() => {
-            setActiveView("overview");
-            setError("");
-          }}
+
+        <nav
+          className="instructor-mobile-nav"
+          aria-label="Instructor workspace"
         >
-          <span>▦</span> Overview
-        </button>
-        <button
-          type="button"
-          className={`instructor-nav-link ${activeView === "programs" ? "active" : ""}`}
-          onClick={() => {
-            setActiveView("programs");
-            setError("");
-          }}
-        >
-          <span>▤</span> My programs
-        </button>
-        <button
-          type="button"
-          className={`instructor-nav-link ${activeView === "cohorts" ? "active" : ""}`}
-          onClick={() => {
-            setActiveView("cohorts");
-            setError("");
-          }}
-        >
-          <span>◷</span> My cohorts
-        </button>
-        <button
-          type="button"
-          className={`instructor-nav-link ${
-            activeView === "assessments" ? "active" : ""
-          }`}
-          onClick={() => {
-            setActiveView("assessments");
-            setError("");
-          }}
-        >
-          <span>✓</span> Assessments
-        </button>
+          <button
+            type="button"
+            className={`instructor-nav-link ${activeView === "overview" ? "active" : ""}`}
+            onClick={() => {
+              setActiveView("overview");
+              setError("");
+            }}
+          >
+            <span>▦</span> Overview
+          </button>
+
+          <button
+            type="button"
+            className={`instructor-nav-link ${activeView === "programs" ? "active" : ""}`}
+            onClick={() => {
+              setActiveView("programs");
+              setError("");
+            }}
+          >
+            <span>▤</span> My programs
+          </button>
+
+          <button
+            type="button"
+            className={`instructor-nav-link ${activeView === "cohorts" ? "active" : ""}`}
+            onClick={() => {
+              setActiveView("cohorts");
+              setError("");
+            }}
+          >
+            <span>◷</span> My cohorts
+          </button>
+
+          <button
+            type="button"
+            className={`instructor-nav-link ${
+              activeView === "assessments" ? "active" : ""
+            }`}
+            onClick={() => {
+              setActiveView("assessments");
+              setError("");
+            }}
+          >
+            <span>✓</span> Assessments
+          </button>
+        </nav>
 
         <div className="instructor-sidebar-bottom">
           <div className="instructor-help-card">
