@@ -5,6 +5,7 @@ import App from "./App.jsx";
 import AdminApp from "./admin/AdminApp.jsx";
 import StudentApp from "./student/StudentApp.jsx";
 import InstructorApp from "./instructor/InstructorApp.jsx";
+import AboutPage from "./AboutPage.jsx";
 
 const path = window.location.pathname;
 
@@ -14,7 +15,9 @@ export const Root = path.startsWith("/admin")
     ? InstructorApp
     : path.startsWith("/student")
       ? StudentApp
-      : App;
+      : path === "/about" || path === "/about/"
+        ? AboutPage
+        : App;
 
 createRoot(document.getElementById("root")).render(
   <StrictMode>

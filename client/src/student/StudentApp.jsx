@@ -602,11 +602,19 @@ export default function StudentApp() {
               ? "Sign in to access your Solyce student account."
               : "Create a student account to manage your learning."}
           </p>
+
           {error && (
             <div className="student-alert" role="alert">
               {error}
             </div>
           )}
+
+          {notice && (
+            <div className="student-notice" role="status">
+              {notice}
+            </div>
+          )}
+
           <form onSubmit={submitAuth} className="student-auth-form">
             {authMode === "register" && (
               <label>
@@ -683,6 +691,7 @@ export default function StudentApp() {
               onClick={() => {
                 setAuthMode(authMode === "login" ? "register" : "login");
                 setError("");
+                setNotice("");
               }}
               type="button"
             >

@@ -781,9 +781,7 @@ function App() {
             <a href="#approach" onClick={showCatalogue}>
               Our approach
             </a>
-            <a href="#about" onClick={showCatalogue}>
-              About Solyce
-            </a>
+            <a href="/about">About Solyce</a>
           </nav>
 
           <a
@@ -1218,9 +1216,7 @@ function App() {
             <a href="#approach" onClick={showCatalogue}>
               Our approach
             </a>
-            <a href="#about" onClick={showCatalogue}>
-              About Solyce
-            </a>
+            <a href="/about">About Solyce</a>
           </div>
 
           <div className="footer-column">
