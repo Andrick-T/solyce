@@ -2392,3 +2392,10 @@
     padding: 12px;
   }
 }
+/* Catalogue — accessible loading feedback */
+
+@media (prefers-reduced-motion: reduce) {
+  .loading-spinner {
+    animation: none;
+  }
+}

@@ -806,7 +806,11 @@ function App() {
               </div>
 
               <div className="catalogue-controls">
-                <div className="filter-tabs" aria-label="Filter by language">
+                <div
+                  className="filter-tabs"
+                  role="group"
+                  aria-label="Filter programs by language"
+                >
                   {[
                     { value: "ALL", label: "All programs" },
                     { value: "FRENCH", label: "French" },
@@ -851,8 +855,12 @@ function App() {
               </div>
 
               {loading ? (
-                <div className="catalogue-status" role="status">
-                  <span className="loading-spinner" />
+                <div
+                  className="catalogue-status"
+                  role="status"
+                  aria-live="polite"
+                >
+                  <span className="loading-spinner" aria-hidden="true" />
                   <p>Preparing your catalogueâ€¦</p>
                 </div>
               ) : error ? (
@@ -873,7 +881,12 @@ function App() {
                 </div>
               ) : filteredCourses.length > 0 ? (
                 <>
-                  <div className="results-caption">
+                  <div
+                    className="results-caption"
+                    role="status"
+                    aria-live="polite"
+                    aria-atomic="true"
+                  >
                     <span>
                       {filteredCourses.length}{" "}
                       {filteredCourses.length === 1 ? "program" : "programs"}
@@ -892,7 +905,11 @@ function App() {
                   </div>
                 </>
               ) : courses.length > 0 ? (
-                <div className="catalogue-status">
+                <div
+                  className="catalogue-status"
+                  role="status"
+                  aria-live="polite"
+                >
                   <span className="status-symbol">âŒ•</span>
                   <h3>No matching programs.</h3>
                   <p>Try another search or select a different language.</p>
