@@ -153,6 +153,13 @@ export default function StudentApp() {
 
   const [selectedSession, setSelectedSession] = useState(null);
   const [sessionDetailLoading, setSessionDetailLoading] = useState(false);
+  const [passwordResetMode, setPasswordResetMode] = useState(() =>
+    window.location.pathname === "/student/reset-password" ? "confirm" : "",
+  );
+  const [resetEmail, setResetEmail] = useState("");
+  const [resetPassword, setResetPassword] = useState("");
+  const [resetPasswordConfirm, setResetPasswordConfirm] = useState("");
+  const [resetBusy, setResetBusy] = useState(false);
 
   const loadSessionDetail = useCallback(async (sessionId) => {
     setSessionDetailLoading(true);
@@ -341,7 +348,191 @@ export default function StudentApp() {
       setProfileBusy(false);
     }
   }
+  async function requestPasswordReset(event) {
+    event.preventDefault();
+    setResetBusy(true);
+    setError("");
+    setNotice("");
 
+    try {
+      const result = await api("/password-reset", {
+        method: "POST",
+        body: JSON.stringify({ email: resetEmail }),
+      });
+
+      setNotice(
+        result?.message ||
+          "If an eligible account exists for that email, a password reset link will be sent.",
+      );
+    } catch (e) {
+      setError(e.message);
+    } finally {
+      setResetBusy(false);
+    }
+  }
+
+  async function confirmPasswordReset(event) {
+    event.preventDefault();
+    setError("");
+    setNotice("");
+
+    const token = new URLSearchParams(window.location.search).get("token");
+
+    if (!token) {
+      setError(
+        "The reset link is missing its token. Please request a new link.",
+      );
+      return;
+    }
+
+    if (resetPassword !== resetPasswordConfirm) {
+      setError("The passwords do not match.");
+      return;
+    }
+
+    if (resetPassword.length < 10 || resetPassword.length > 128) {
+      setError("Your password must contain between 10 and 128 characters.");
+      return;
+    }
+
+    setResetBusy(true);
+
+    try {
+      const result = await api("/password-reset/confirm", {
+        method: "POST",
+        body: JSON.stringify({
+          token,
+          password: resetPassword,
+        }),
+      });
+
+      setNotice(
+        result?.message || "Your password has been reset. You can now sign in.",
+      );
+
+      setResetPassword("");
+      setResetPasswordConfirm("");
+
+      window.history.replaceState({}, "", "/student");
+      setPasswordResetMode("");
+      setAuthMode("login");
+    } catch (e) {
+      setError(e.message);
+    } finally {
+      setResetBusy(false);
+    }
+  }
+
+  function returnToSignIn() {
+    setPasswordResetMode("");
+    setAuthMode("login");
+    setError("");
+    setNotice("");
+    window.history.replaceState({}, "", "/student");
+  }
+  if (passwordResetMode) {
+    const isConfirmation = passwordResetMode === "confirm";
+
+    return (
+      <div className="student-auth-screen">
+        <div className="student-auth-card">
+          <StudentBrand />
+
+          <p className="student-eyebrow">
+            <span /> ACCOUNT SECURITY
+          </p>
+
+          <h1>
+            {isConfirmation ? "Choose a new password." : "Reset your password."}
+          </h1>
+
+          <p className="student-auth-intro">
+            {isConfirmation
+              ? "Create a new password to regain access to your student account."
+              : "Enter your email address and we will send you a reset link if an eligible account exists."}
+          </p>
+
+          {error && (
+            <div className="student-alert" role="alert">
+              {error}
+            </div>
+          )}
+
+          {notice && (
+            <div className="student-notice" role="status">
+              {notice}
+            </div>
+          )}
+
+          {isConfirmation ? (
+            <form onSubmit={confirmPasswordReset} className="student-auth-form">
+              <label>
+                New password
+                <input
+                  type="password"
+                  autoComplete="new-password"
+                  required
+                  minLength={10}
+                  maxLength={128}
+                  value={resetPassword}
+                  onChange={(event) => setResetPassword(event.target.value)}
+                />
+                <small>Use between 10 and 128 characters.</small>
+              </label>
+
+              <label>
+                Confirm new password
+                <input
+                  type="password"
+                  autoComplete="new-password"
+                  required
+                  minLength={10}
+                  maxLength={128}
+                  value={resetPasswordConfirm}
+                  onChange={(event) =>
+                    setResetPasswordConfirm(event.target.value)
+                  }
+                />
+              </label>
+
+              <button className="student-primary-button" disabled={resetBusy}>
+                {resetBusy ? "Please wait…" : "Reset password"} <span>→</span>
+              </button>
+            </form>
+          ) : (
+            <form onSubmit={requestPasswordReset} className="student-auth-form">
+              <label>
+                Email address
+                <input
+                  type="email"
+                  autoComplete="email"
+                  required
+                  maxLength={191}
+                  value={resetEmail}
+                  onChange={(event) => setResetEmail(event.target.value)}
+                />
+              </label>
+
+              <button className="student-primary-button" disabled={resetBusy}>
+                {resetBusy ? "Sending…" : "Send reset link"} <span>→</span>
+              </button>
+            </form>
+          )}
+
+          <p className="student-auth-switch">
+            Remembered your password?{" "}
+            <button type="button" onClick={returnToSignIn}>
+              Sign in
+            </button>
+          </p>
+
+          <a className="student-back-link" href="/">
+            ← Back to Solyce website
+          </a>
+        </div>
+      </div>
+    );
+  }
   if (loading)
     return (
       <div className="student-auth-screen">
@@ -416,6 +607,21 @@ export default function StudentApp() {
                 <small>Use at least 10 characters.</small>
               )}
             </label>
+            {authMode === "login" && (
+              <p className="student-auth-switch">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setPasswordResetMode("request");
+                    setResetEmail(auth.email);
+                    setError("");
+                    setNotice("");
+                  }}
+                >
+                  Forgot your password?
+                </button>
+              </p>
+            )}
             <button className="student-primary-button" disabled={authBusy}>
               {authBusy
                 ? "Please wait…"

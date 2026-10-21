@@ -14,7 +14,6 @@ Préparer la gestion des cohortes, avec un instructeur obligatoire, une capacit�
 
 Consolider les actions d'approbation, de rejet et de publication séparée, puis assurer leur cohérence avec la gestion des instructeurs et des cohortes. ... plan global: voici ce qu'était notre program initial, restons dessus: Phase 1 — Terminer les corrections déjà demandées
 
-Étape actuelle
 
 Corriger les fonctionnalités déjà engagées sans toucher inutilement à l'architecture.
 
@@ -38,7 +37,7 @@ Corriger les fonctionnalités déjà engagées sans toucher inutilement à l'arc
 - Vérifier les règles de capacité des classes et l'affectation obligatoire d'un instructeur.
 - Finaliser le suivi des inscriptions et des paiements hors ligne.
 - Vérifier les confirmations et les différents états d'une inscription.
-
+Étape actuelle:
 ## Phase 4 — Vérifier l'authentification et la sécurité
 
 - Inscription, connexion et réinitialisation du mot de passe.

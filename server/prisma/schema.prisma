@@ -18,6 +18,7 @@ model User {
   isActive     Boolean  @default(true)
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
+  passwordResetTokens PasswordResetToken[]
 
   enrollments          Enrollment[]
   assignedCohorts      Cohort[]             @relation("CohortInstructor")
@@ -443,4 +444,17 @@ enum AttendanceStatus {
   ABSENT
   LATE
   EXCUSED
+}
+model PasswordResetToken {
+  id        Int       @id @default(autoincrement())
+  userId    Int
+  tokenHash String    @unique @db.VarChar(64)
+  expiresAt DateTime
+  usedAt    DateTime?
+  createdAt DateTime  @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, expiresAt])
+  @@map("password_reset_tokens")
 }
