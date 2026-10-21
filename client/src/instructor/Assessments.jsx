@@ -569,7 +569,13 @@ export default function InstructorAssessments() {
                   allows you to review the correction but not modify it.
                 </div>
               )}
-
+              {selectedAttempt.status === "GRADED" && (
+                <p className="assessments-readonly-notice">
+                  Only the final score and general feedback are saved in this
+                  version. Individual question scores are not available for
+                  previously graded attempts.
+                </p>
+              )}
               <form className="assessments-grading-form" onSubmit={submitGrade}>
                 <div className="assessments-question-heading">
                   <div>
@@ -649,31 +655,28 @@ export default function InstructorAssessments() {
                           </div>
                         )}
 
-                        <label className="assessments-score-field">
-                          <span>Points awarded</span>
-                          <div>
-                            <input
-                              type="number"
-                              min="0"
-                              max={question.points}
-                              step="0.5"
-                              value={
-                                isReadOnly
-                                  ? Number(questionScores[question.id] || 0)
-                                  : questionScores[question.id]
-                              }
-                              disabled={isReadOnly}
-                              required={!isReadOnly}
-                              onChange={(event) =>
-                                updateQuestionScore(
-                                  question.id,
-                                  event.target.value,
-                                )
-                              }
-                            />
-                            <span>/ {question.points}</span>
-                          </div>
-                        </label>
+                        {!isReadOnly && (
+                          <label className="assessments-score-field">
+                            <span>Points awarded</span>
+                            <div>
+                              <input
+                                type="number"
+                                min="0"
+                                max={question.points}
+                                step="0.5"
+                                value={questionScores[question.id]}
+                                required
+                                onChange={(event) =>
+                                  updateQuestionScore(
+                                    question.id,
+                                    event.target.value,
+                                  )
+                                }
+                              />
+                              <span>/ {question.points}</span>
+                            </div>
+                          </label>
+                        )}
                       </article>
                     );
                   })
