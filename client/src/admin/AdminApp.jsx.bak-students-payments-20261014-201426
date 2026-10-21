@@ -1,62 +1,4 @@
-Selon où nous nous sommes arretés, voici le résultat de la phase 2.3 : PS C:\Users\lenovo\Solyce> npx --prefix server prisma validate --schema=server/prisma/schema.prisma
-Environment variables loaded from .env
-Prisma schema loaded from server\prisma\schema.prisma
-The schema at server\prisma\schema.prisma is valid 🚀
-PS C:\Users\lenovo\Solyce> npm run build --prefix client
-
-> client@0.0.0 build
-> vite build
-
-vite v8.3.4 building client environment for production...
-✓ 32 modules transformed.
-computing gzip size...
-dist/index.html                   0.45 kB │ gzip:   0.29 kB
-dist/assets/index-CUpC1eL4.css   86.26 kB │ gzip:  17.10 kB
-dist/assets/index-DsLsP9rD.js   431.12 kB │ gzip: 112.25 kB
-
-✓ built in 726ms
-PS C:\Users\lenovo\Solyce> .... pour contexte, nous travaillions sur la phase 2.2. en exécutant ce prompt : Solyce — Phase 2.2: Complete the Instructor Learning Studio
-Work in the existing local Solyce repository at C:\Users\lenovo\Solyce.
-Complete the existing instructor learning studio by adding instructor-side authoring of learning resources and assessments/questions, integrated with the current curriculum, course approval workflow, and administrative publishing controls.
-1. Inspect the current Git status and active branch. Do not discard or overwrite existing changes.
-2. Read the existing instructor studio, instructor pedagogy routes, instructor assessment routes, administrative learning-content routes, administrative pedagogy routes, Prisma schema, and corresponding admin interfaces.
-3. Reuse the existing Prisma models, API conventions, validation utilities, and CSS design system.
-4. Do not duplicate existing module/lesson CRUD or rebuild program submission, which are already implemented.
-5. Do not modify production data or apply database migrations unless the schema inspection demonstrates that a change is strictly necessary.
-Extend the existing instructor learning studio so an instructor can create, list, view, and edit learning resources associated with lessons in their own editable programs.
-Support the existing resource types: PDF, DOCUMENT, VIDEO, AUDIO, LINK, IMAGE, OTHER.
-Include title, description, URL, release phase, and ordering position. Reuse the existing LearningResource model and its current field constraints.
-Do not introduce file uploads or external storage services in this phase. Resources use validated URLs.
-Allow instructors to create, list, view, and edit assessments associated with lessons in their own editable programs.
-Support the existing assessment types: HOMEWORK, QUIZ, PRACTICE, MOCK_EXAM.
-Support instructions, description, release phase, maximum score, passing score, optional time limit, and optional deadline.
-Allow instructors to add, list, edit, and order questions using the existing AssessmentQuestion model and supported question types. Validate question options, expected answers, points, and positions. Ensure the total possible question points and assessment scoring configuration remain coherent.
-Never expose correct answers to student-facing endpoints before submission or grading.
-Enforce authorization on the server, not only in the UI.
-- An instructor may manage content only within their own program.
-- Creation and modification are allowed only when the parent program has approval status DRAFT or REJECTED.
-- Instructors cannot publish resources, assessments, questions, modules, or lessons directly.
-- New content must remain unpublished.
-- Preserve the existing program submission workflow.
-- Do not allow changes to content while the program is PENDING_REVIEW or APPROVED.
-- Keep publication and approval under administrator control.
-- Use the existing same-origin protection and validation conventions on mutations.
-- Return consistent errors for invalid input, missing records, unauthorized ownership, and locked programs.
-Do not change the existing grading workflow or student assessment endpoints except where a strictly necessary compatibility fix is identified.
-Integrate resource and assessment management into the existing InstructorLearningStudio.jsx rather than creating a separate application.
-Keep the existing visual language and layout. Provide clear loading, saving, success, error, empty, and read-only states. Prevent duplicate submissions while saving and refresh affected data after successful mutations.
-Avoid overengineering, new state-management libraries, unnecessary abstractions, and unrelated UI redesigns.
-1. Run the client production build.
-2. Run the server's existing validation and test commands, where available.
-3. Verify an instructor can manage content in their own draft program.
-4. Verify an instructor cannot access or modify another instructor's content by changing record IDs.
-5. Verify editing is blocked after program submission and after approval.
-6. Verify new content is not published automatically.
-7. Verify administrators retain their existing review and publication capabilities.
-8. Verify the existing student learning, resource-access, assessment-taking, and grading workflows are not regressed.
-Fix only issues directly related to this scope.
-Never work directly on main. Create a focused feature branch from the appropriate integration branch, following the repository's existing workflow. Preserve unrelated local modifications. Commit incrementally only after verification.
-Summarize the files changed, endpoints added or modified, authorization rules, tests/build results, and any remaining limitations. Clearly distinguish checks actually performed from those not performed. ... je rappelle que tous les fichiers sont accéssible depuis le dépot github. Tu ne PEUX PAS écrire directement dans le dépot, toutes modification des fichiers se fera ici car tu m'envera las fichiers à modifier directement ici et je modifierai dans mon dépot local avant d'envoyer cela sur le depot github. Nous ne créerons pas non plus de branche develop, feature etc pour éviter toute complexité inutile. Le projet est déjà bien avancé, voici qu'elle a été le plan initial: phase 2 : 2.1 — Gestion des instructeurs
+Selon d'où nous sommes arretés, voici quel a éé le plan initial. je rappelle que tous les fichiers sont accéssible depuis le dépot github. Tu ne PEUX PAS écrire directement dans le dépot, toutes modification des fichiers se fera ici car tu m'envera las fichiers à modifier directement ici et je modifierai dans mon dépot local avant d'envoyer cela sur le depot github. Nous ne créerons pas non plus de branche develop, feature etc pour éviter toute complexité inutile. Le projet est déjà bien avancé. phase 2 : 2.1 — Gestion des instructeurs
 
 Vérifier et finaliser la liste des instructeurs, leur statut actif/inactif et leur accès aux fonctionnalités qui leur sont destinées.
 
@@ -72,8 +14,6 @@ Préparer la gestion des cohortes, avec un instructeur obligatoire, une capacit�
 
 Consolider les actions d'approbation, de rejet et de publication séparée, puis assurer leur cohérence avec la gestion des instructeurs et des cohortes. ... plan global: voici ce qu'était notre program initial, restons dessus: Phase 1 — Terminer les corrections déjà demandées
 
-Étape actuelle
-
 Corriger les fonctionnalités déjà engagées sans toucher inutilement à l'architecture.
 
 - Vérifier les corrections de `MyPrograms.jsx` et `InstructorLearningStudio.jsx`.
@@ -88,6 +28,8 @@ Corriger les fonctionnalités déjà engagées sans toucher inutilement à l'arc
 - Administrateur : consulter les programmes, approuver ou rejeter les soumissions, gérer les cours et les cohortes.
 - Vérifier que les programmes restent visibles après soumission ou approbation.
 - Vérifier les rôles, les accès interdits et les retours d'erreur.
+
+Étape actuelle :
 
 ## Phase 3 — Finaliser le parcours étudiant
 
@@ -125,4 +67,4 @@ Nous corrigerons les défauts constatés, sans refaire les écrans qui fonctionn
 - Vérifier les configurations de production du frontend et du backend.
 - Vérifier la base Aiven, les variables secrètes, les URL et les paramètres CORS.
 - Déployer, tester les fonctionnalités sur la version en ligne et corriger les éventuels problèmes.
-- Préparer les données initiales et effectuer une dernière vérification avant ouverture aux utilisateurs. ... Si les résultats des commandes powershell partagés plus haut sont satisfaisantes, nous en avons donc fini avec la phase 2.3 et passons à la phase 2.4. Tu peux toujours vérifier le dépot actuelle du github
+- Préparer les données initiales et effectuer une dernière vérification avant ouverture aux utilisateurs. ... Si les résultats des commandes powershell partagés plus haut sont satisfaisantes, nous terminons avec la phase 3. Tu peux toujours vérifier le dépot actuelle du github

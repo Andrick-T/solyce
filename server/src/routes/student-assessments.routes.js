@@ -128,7 +128,6 @@ function safeAttempt(attempt) {
 function isAttemptExpired(attempt, now = new Date()) {
   const timeLimitMinutes = attempt.assessment?.timeLimitMinutes;
 
-  // No time limit configured: the attempt does not expire by duration.
   if (
     timeLimitMinutes === null ||
     timeLimitMinutes === undefined ||
@@ -162,11 +161,10 @@ function answersMatch(question, submittedAnswer) {
     return null;
   }
 
-  if (question.questionType === "LONG_ANSWER") {
-    return null;
-  }
-
-  if (question.questionType === "SHORT_ANSWER") {
+  if (
+    question.questionType === "LONG_ANSWER" ||
+    question.questionType === "SHORT_ANSWER"
+  ) {
     return null;
   }
 
@@ -176,7 +174,6 @@ function answersMatch(question, submittedAnswer) {
     }
 
     const actual = submittedAnswer.map(normalizeAnswer).sort();
-
     const correct = expected.map(normalizeAnswer).sort();
 
     return JSON.stringify(actual) === JSON.stringify(correct);
@@ -200,7 +197,7 @@ function answersMatch(question, submittedAnswer) {
   );
 }
 
-// Start a new attempt.
+// Start a new attempt or resume an existing one.
 router.post(
   "/assessments/:assessmentId/attempts",
   requireSameOrigin,
@@ -229,15 +226,6 @@ router.post(
 
       const { assessment, enrollmentIds } = access;
 
-      if (assessment.dueAt && new Date() > assessment.dueAt) {
-        return fail(
-          res,
-          403,
-          "ASSESSMENT_DEADLINE_PASSED",
-          "The deadline for this assessment has passed.",
-        );
-      }
-
       if (assessment.questions.length === 0) {
         return fail(
           res,
@@ -249,6 +237,8 @@ router.post(
 
       const enrollmentId = enrollmentIds[0];
 
+      // An existing attempt can be resumed even after the assessment deadline.
+      // Its own time limit is still enforced by the save and submit routes.
       const existingAttempt = await prisma.assessmentAttempt.findFirst({
         where: {
           enrollmentId,
@@ -265,6 +255,16 @@ router.post(
             questions: assessment.questions.map(safeQuestion),
           },
         });
+      }
+
+      // The deadline blocks only the creation of a new attempt.
+      if (assessment.dueAt && new Date() > assessment.dueAt) {
+        return fail(
+          res,
+          403,
+          "ASSESSMENT_DEADLINE_PASSED",
+          "The deadline for this assessment has passed.",
+        );
       }
 
       const latest = await prisma.assessmentAttempt.findFirst({
@@ -409,6 +409,24 @@ router.patch(
             400,
             "ANSWER_TOO_LONG",
             "An answer exceeds the maximum allowed length.",
+          );
+        }
+
+        if (
+          Array.isArray(answer) &&
+          (!answer.every(
+            (item) =>
+              typeof item === "string" ||
+              typeof item === "boolean" ||
+              typeof item === "number",
+          ) ||
+            answer.length > 200)
+        ) {
+          return fail(
+            res,
+            400,
+            "INVALID_ANSWER_FORMAT",
+            "Answer arrays contain unsupported values or too many items.",
           );
         }
       }

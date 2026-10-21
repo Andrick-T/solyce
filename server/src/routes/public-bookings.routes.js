@@ -44,22 +44,36 @@ router.post("/", async (req, res) => {
   const input = {
     ...parsed.data,
     fullName: parsed.data.fullName.replace(/\s+/g, " "),
-    email: parsed.data.email.toLowerCase(),
+    email: parsed.data.email.trim().toLowerCase(),
     phone: parsed.data.phone.trim(),
   };
 
   try {
     const result = await prisma.$transaction(
       async (tx) => {
+        const now = new Date();
+        const today = new Date(
+          `${now.toISOString().slice(0, 10)}T00:00:00.000Z`,
+        );
+
         const cohort = await tx.cohort.findFirst({
           where: {
             id: input.cohortId,
             status: "OPEN",
-            startDate: { gte: new Date(new Date().toISOString().slice(0, 10)) },
-            course: { isPublished: true },
+            startDate: { gte: today },
+            instructorId: { not: null },
+            instructor: {
+              is: {
+                role: "INSTRUCTOR",
+                isActive: true,
+              },
+            },
+            course: {
+              isPublished: true,
+            },
             OR: [
               { enrollmentDeadline: null },
-              { enrollmentDeadline: { gte: new Date() } },
+              { enrollmentDeadline: { gte: now } },
             ],
           },
           include: {
@@ -87,8 +101,17 @@ router.post("/", async (req, res) => {
         const duplicate = await tx.enrollment.findFirst({
           where: {
             cohortId: cohort.id,
-            guestEmail: input.email,
             status: { not: "CANCELLED" },
+            OR: [
+              { guestEmail: input.email },
+              {
+                user: {
+                  is: {
+                    email: input.email,
+                  },
+                },
+              },
+            ],
           },
           select: { id: true },
         });
@@ -151,7 +174,11 @@ router.post("/", async (req, res) => {
               select: {
                 name: true,
                 startDate: true,
-                course: { select: { title: true } },
+                course: {
+                  select: {
+                    title: true,
+                  },
+                },
               },
             },
           },
