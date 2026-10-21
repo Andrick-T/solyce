@@ -1104,3 +1104,66 @@
   border-color: #f0c7c7;
   background: #fff7f7;
 }
+
+/* Phase 5 — Feedback messages */
+.student-alert,
+.student-notice {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  margin: 0 0 20px;
+  padding: 13px 15px;
+  border: 1px solid;
+  border-radius: 8px;
+  font-size: 12px;
+  line-height: 1.7;
+  overflow-wrap: anywhere;
+}
+
+.student-alert {
+  border-color: #f0c7c0;
+  background: #fff1ee;
+  color: #8c382b;
+}
+
+.student-notice {
+  border-color: #cfe2b8;
+  background: #f1f7e9;
+  color: #405b2f;
+}
+
+.student-alert[role="alert"]::before {
+  content: "!";
+  display: inline-grid;
+  flex: 0 0 20px;
+  width: 20px;
+  height: 20px;
+  place-items: center;
+  border-radius: 50%;
+  background: #f8dcd6;
+  color: #8c382b;
+  font-weight: 800;
+  line-height: 1;
+}
+
+.student-notice[role="status"]::before {
+  content: "✓";
+  display: inline-grid;
+  flex: 0 0 20px;
+  width: 20px;
+  height: 20px;
+  place-items: center;
+  border-radius: 50%;
+  background: #dcebc9;
+  color: #405b2f;
+  font-weight: 800;
+  line-height: 1;
+}
+
+@media (max-width: 480px) {
+  .student-alert,
+  .student-notice {
+    padding: 11px 12px;
+    font-size: 12px;
+  }
+}

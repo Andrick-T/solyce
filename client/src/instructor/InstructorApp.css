@@ -1311,3 +1311,25 @@
     width: 100%;
   }
 }
+
+/* Phase 5 — Feedback messages */
+.instructor-alert,
+.instructor-notice {
+  border-radius: 8px;
+  padding: 12px 15px;
+  font-size: 12px;
+  line-height: 1.7;
+  overflow-wrap: anywhere;
+}
+
+.instructor-alert {
+  border-color: #f0c7c0;
+  background: #fff1ee;
+  color: #8c382b;
+}
+
+.instructor-notice {
+  border-color: #cfe2b8;
+  background: #f1f7e9;
+  color: #405b2f;
+}
