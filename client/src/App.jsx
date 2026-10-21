@@ -730,6 +730,51 @@ function App() {
             </div>
           </section>
 
+          <section
+            className="learning-story"
+            aria-labelledby="learning-story-title"
+          >
+            <div className="container learning-story-layout">
+              <div className="learning-story-visual">
+                <img
+                  src="https://images.unsplash.com/photo-1523240795612-9a054b0db644?auto=format&fit=crop&w=1400&q=85"
+                  alt="Students learning and exchanging ideas together"
+                  loading="lazy"
+                  decoding="async"
+                />
+                <span className="learning-story-label">
+                  LEARN TOGETHER. MOVE FORWARD.
+                </span>
+              </div>
+
+              <div className="learning-story-copy">
+                <span className="section-kicker">BEYOND THE CLASSROOM</span>
+
+                <h2 id="learning-story-title">
+                  Confidence grows
+                  <br />
+                  <span>through practice.</span>
+                </h2>
+
+                <p>
+                  Learning a language is more than memorising words. It is about
+                  expressing yourself, asking questions, and building the
+                  confidence to take your next step. With live guidance and a
+                  small learning group, every class becomes an opportunity to
+                  practise.
+                </p>
+
+                <a className="learning-story-link" href="#programs">
+                  Explore our programs <ArrowIcon />
+                </a>
+
+                <span className="learning-story-index" aria-hidden="true">
+                  SOLYCE / 01
+                </span>
+              </div>
+            </div>
+          </section>
+
           <section className="catalogue-section" id="programs">
             <div className="container">
               <div className="catalogue-heading">
@@ -910,11 +955,7 @@ function App() {
                 </p>
 
                 <div className="closing-buttons">
-                  <a
-                    className="button button-light"
-                    href="#programs"
-                    onClick={showCatalogue}
-                  >
+                  <a className="button button-light" href="#programs">
                     Explore programs <ArrowIcon />
                   </a>
 
