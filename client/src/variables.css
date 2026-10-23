@@ -1,0 +1,21 @@
+:root {
+  /* Solyce — Burgundy & Amber */
+  --solyce-primary: #702632;
+  --solyce-primary-hover: #561c26;
+  --solyce-blue: #702632; /* Compatibilité avec les anciens overrides */
+  --solyce-accent: #d99a32;
+  --solyce-terracotta: #b94e35;
+
+  --solyce-tint: #f5e5d8;
+  --solyce-background: #f7f0e5;
+  --solyce-surface: #ffffff;
+  --solyce-ink: #292323;
+  --solyce-muted: #766c67;
+  --solyce-border: #e8dccb;
+
+  --solyce-amber-dark: #70470b;
+  --solyce-focus: #702632;
+
+  --solyce-shadow: 0 12px 32px rgba(77, 35, 38, 0.09);
+  --solyce-shadow-hover: 0 20px 42px rgba(77, 35, 38, 0.15);
+}
