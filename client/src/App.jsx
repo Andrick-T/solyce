@@ -1176,12 +1176,12 @@ function App() {
                     Discover our programs <ArrowIcon />
                   </a>
                   <a className="text-link" href="#approach">
-                    The Solyce approach <span>â†“</span>
+                    The Solyce approach <span>↓</span>
                   </a>
                 </div>
 
                 <div className="hero-footnote">
-                  <span className="footnote-mark">âœ³</span>
+                  <span className="footnote-mark">✳</span>
                   <span>Purposeful learning. Meaningful progress.</span>
                 </div>
               </div>
@@ -1199,7 +1199,7 @@ function App() {
                 />
                 <div className="visual-topline">
                   <span>THE SOLYCE METHOD</span>
-                  <span>01 â€” 03</span>
+                  <span>01 ’ 03</span>
                 </div>
 
                 <div className="visual-composition">
@@ -1235,7 +1235,7 @@ function App() {
             <div className="hero-bottom container">
               <span>EDUCATION, WITH INTENTION.</span>
               <a href="#programs">
-                Explore the catalogue <span>â†“</span>
+                Explore the catalogue <span>↓</span>
               </a>
             </div>
           </section>
@@ -1458,7 +1458,7 @@ function App() {
                   role="status"
                   aria-live="polite"
                 >
-                  <span className="status-symbol">âŒ•</span>
+                  <span className="status-symbol">⌨•</span>
                   <h3>No matching programs.</h3>
                   <p>Try another search or select a different language.</p>
                   <button
@@ -1575,7 +1575,7 @@ function App() {
           </div>
 
           <div className="footer-note">
-            <span className="footer-note-mark">âœ³</span>
+            <span className="footer-note-mark">✳</span>
             <p>
               Every next chapter
               <br />
@@ -1585,9 +1585,7 @@ function App() {
         </div>
 
         <div className="container footer-bottom">
-          <span>
-            Â© {new Date().getFullYear()} Solyce. All rights reserved.
-          </span>
+          <span>é {new Date().getFullYear()} Solyce. All rights reserved.</span>
           <span>Built around your next chapter.</span>
         </div>
       </footer>
