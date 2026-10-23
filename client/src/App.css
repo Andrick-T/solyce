@@ -3403,3 +3403,440 @@
     box-sizing: border-box;
   }
 }
+
+/* Detailed program curriculum */
+.detail-page .detail-module-list {
+  border-top: 1px solid var(--line);
+}
+
+.detail-page .detail-module {
+  border-bottom: 1px solid var(--line);
+}
+
+.detail-page .detail-module-summary {
+  display: flex;
+  align-items: center;
+  gap: 22px;
+  padding: 24px 4px;
+  cursor: pointer;
+  list-style: none;
+}
+
+.detail-page .detail-module-summary::-webkit-details-marker {
+  display: none;
+}
+
+.detail-page .detail-module-heading {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  gap: 7px;
+}
+
+.detail-page .detail-module-heading strong {
+  color: var(--ink);
+  font-size: 16px;
+  font-weight: 600;
+}
+
+.detail-page .detail-module-heading > span {
+  color: #737b70;
+  font-size: 11px;
+}
+
+.detail-page .detail-module-toggle {
+  display: grid;
+  width: 32px;
+  height: 32px;
+  flex-shrink: 0;
+  place-items: center;
+  border: 1px solid var(--line);
+  border-radius: 50%;
+  font-size: 20px;
+  transition: transform 180ms ease;
+}
+
+.detail-page .detail-module[open] .detail-module-toggle {
+  transform: rotate(45deg);
+}
+
+.detail-page .detail-module-description {
+  margin: 0 0 20px 58px;
+  color: #656d62;
+  font-size: 13px;
+  line-height: 1.8;
+}
+
+.detail-page .detail-lesson-list {
+  margin: 0 0 22px 58px;
+  padding: 0;
+  border-top: 1px solid var(--line);
+  list-style: none;
+}
+
+.detail-page .detail-lesson {
+  display: flex;
+  align-items: flex-start;
+  gap: 16px;
+  padding: 19px 0;
+  border-bottom: 1px solid var(--line);
+}
+
+.detail-page .detail-lesson:last-child {
+  border-bottom: 0;
+}
+
+.detail-page .detail-lesson-index {
+  padding-top: 3px;
+  color: #858d7d;
+  font-size: 10px;
+}
+
+.detail-page .detail-lesson-content {
+  flex: 1;
+  min-width: 0;
+}
+
+.detail-page .detail-lesson-content h3 {
+  margin: 0;
+  color: var(--ink);
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.detail-page .detail-lesson-content > p,
+.detail-page .detail-lesson-objectives p {
+  margin: 8px 0 0;
+  color: #656d62;
+  font-size: 12px;
+  line-height: 1.8;
+}
+
+.detail-page .detail-lesson-objectives {
+  margin-top: 12px;
+}
+
+.detail-page .detail-lesson-objectives strong {
+  color: var(--ink);
+  font-size: 11px;
+}
+
+.detail-page .detail-lesson-duration {
+  flex-shrink: 0;
+  color: #737b70;
+  font-size: 11px;
+}
+
+@media (max-width: 600px) {
+  .detail-page .detail-module-summary {
+    gap: 13px;
+    padding: 20px 0;
+  }
+
+  .detail-page .detail-module-heading strong {
+    font-size: 14px;
+  }
+
+  .detail-page .detail-module-description,
+  .detail-page .detail-lesson-list {
+    margin-left: 0;
+  }
+
+  .detail-page .detail-lesson {
+    gap: 10px;
+  }
+
+  .detail-page .detail-lesson-duration {
+    font-size: 10px;
+  }
+}
+
+/* Program detail — marketing and learning outcomes */
+
+.detail-page .detail-marketing-section {
+  display: grid;
+  grid-template-columns: 100px minmax(0, 1fr);
+  gap: 32px;
+  padding: 76px 0;
+  border-top: 1px solid var(--border-color, #e5e2dc);
+}
+
+.detail-page .detail-marketing-index {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 18px;
+  color: var(--text-muted, #85827b);
+  font-size: 0.8rem;
+  letter-spacing: 0.12em;
+}
+
+.detail-page .detail-marketing-index-line {
+  display: block;
+  width: 42px;
+  height: 1px;
+  background: currentColor;
+}
+
+.detail-page .detail-marketing-content {
+  max-width: 820px;
+}
+
+.detail-page .detail-marketing-content h2 {
+  max-width: 720px;
+  margin: 18px 0 14px;
+  font-size: clamp(2rem, 4vw, 3.25rem);
+  line-height: 1.12;
+  letter-spacing: -0.045em;
+}
+
+.detail-page .detail-marketing-description {
+  max-width: 650px;
+  margin: 0;
+  color: var(--text-muted, #716f69);
+  font-size: 1rem;
+  line-height: 1.8;
+}
+
+.detail-page .detail-marketing-list {
+  display: grid;
+  gap: 0;
+  margin: 28px 0 0;
+  padding: 0;
+  list-style: none;
+  border-top: 1px solid var(--border-color, #e5e2dc);
+}
+
+.detail-page .detail-marketing-list li {
+  display: grid;
+  grid-template-columns: 24px minmax(0, 1fr);
+  align-items: start;
+  gap: 14px;
+  padding: 18px 0;
+  border-bottom: 1px solid var(--border-color, #e5e2dc);
+  line-height: 1.7;
+}
+
+.detail-page .detail-marketing-check {
+  color: var(--accent-color, #8c7355);
+  font-size: 1rem;
+}
+
+@media (max-width: 600px) {
+  .detail-page .detail-marketing-section {
+    grid-template-columns: 1fr;
+    gap: 22px;
+    padding: 48px 0;
+  }
+
+  .detail-page .detail-marketing-index {
+    flex-direction: row;
+    align-items: center;
+  }
+
+  .detail-page .detail-marketing-content h2 {
+    font-size: clamp(1.8rem, 8vw, 2.5rem);
+  }
+
+  .detail-page .detail-marketing-list li {
+    gap: 10px;
+  }
+}
+
+/* Program detail — FAQ */
+
+.detail-page .detail-faq {
+  display: grid;
+  grid-template-columns: minmax(0, 0.8fr) minmax(0, 1.2fr);
+  gap: clamp(36px, 7vw, 100px);
+  padding: 80px 0;
+  border-top: 1px solid #e0e1d8;
+}
+
+.detail-page .detail-faq-intro {
+  align-self: start;
+  position: sticky;
+  top: 32px;
+}
+
+.detail-page .detail-faq-intro h2 {
+  margin-top: 20px;
+  font-size: clamp(30px, 3.5vw, 44px);
+  font-weight: 500;
+  letter-spacing: -0.05em;
+  line-height: 1.12;
+}
+
+.detail-page .detail-faq-intro > p {
+  max-width: 360px;
+  margin-top: 18px;
+  color: #70776c;
+  font-size: 13px;
+  line-height: 1.85;
+}
+
+.detail-page .detail-faq-list {
+  border-top: 1px solid #e0e1d8;
+}
+
+.detail-page .detail-faq-item {
+  border-bottom: 1px solid #e0e1d8;
+}
+
+.detail-page .detail-faq-item summary {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 20px;
+  padding: 22px 0;
+  cursor: pointer;
+  list-style: none;
+  color: #28342b;
+  font-size: 14px;
+  font-weight: 500;
+  line-height: 1.6;
+}
+
+.detail-page .detail-faq-item summary::-webkit-details-marker {
+  display: none;
+}
+
+.detail-page .detail-faq-toggle {
+  display: grid;
+  flex: 0 0 28px;
+  width: 28px;
+  height: 28px;
+  place-items: center;
+  border: 1px solid #dfe1d7;
+  border-radius: 50%;
+  color: #59674a;
+  font-size: 18px;
+  font-weight: 400;
+  transition: transform 180ms ease;
+}
+
+.detail-page .detail-faq-item[open] .detail-faq-toggle {
+  transform: rotate(45deg);
+}
+
+.detail-page .detail-faq-item summary:focus-visible {
+  outline: 2px solid #7c8b62;
+  outline-offset: 4px;
+}
+
+.detail-page .detail-faq-item > p {
+  max-width: 600px;
+  margin: -3px 35px 23px 0;
+  color: #70776c;
+  font-size: 12px;
+  line-height: 1.9;
+}
+
+/* Program detail — final CTA */
+
+.detail-page .detail-final-cta {
+  position: relative;
+  overflow: hidden;
+  margin: 20px 0 50px;
+  padding: clamp(40px, 7vw, 86px) 30px;
+  background: #28342b;
+  color: #fff;
+  text-align: center;
+}
+
+.detail-page .detail-final-cta-mark {
+  display: block;
+  margin-bottom: 24px;
+  color: #c8d0b8;
+  font-family: Georgia, serif;
+  font-size: 48px;
+  line-height: 1;
+}
+
+.detail-page .detail-final-cta .eyebrow {
+  justify-content: center;
+  color: #c8d0b8;
+}
+
+.detail-page .detail-final-cta h2 {
+  max-width: 700px;
+  margin: 22px auto 0;
+  font-size: clamp(34px, 5vw, 58px);
+  font-weight: 500;
+  letter-spacing: -0.055em;
+  line-height: 1.08;
+  text-wrap: balance;
+}
+
+.detail-page .detail-final-cta > p {
+  max-width: 500px;
+  margin: 20px auto 0;
+  color: #d1d6cc;
+  font-size: 13px;
+  line-height: 1.9;
+}
+
+.detail-page .detail-final-cta-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  gap: 14px;
+  margin-top: 30px;
+}
+
+.detail-page .detail-final-cta .button-outline {
+  border-color: #778273;
+  color: #fff;
+}
+
+.detail-page .detail-final-cta .button-outline:hover {
+  background: #39483b;
+}
+
+@media (max-width: 760px) {
+  .detail-page .detail-faq {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 28px;
+    padding: 55px 0;
+  }
+
+  .detail-page .detail-faq-intro {
+    position: static;
+  }
+
+  .detail-page .detail-faq-intro h2 {
+    font-size: 34px;
+  }
+
+  .detail-page .detail-faq-item summary {
+    padding: 19px 0;
+    font-size: 13px;
+  }
+
+  .detail-page .detail-final-cta {
+    margin: 10px 0 30px;
+    padding: 44px 22px;
+  }
+
+  .detail-page .detail-final-cta h2 {
+    font-size: clamp(32px, 8vw, 42px);
+  }
+
+  .detail-page .detail-final-cta-actions {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .detail-page .detail-final-cta-actions .button {
+    justify-content: center;
+    width: 100%;
+    box-sizing: border-box;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .detail-page .detail-faq-toggle {
+    transition: none;
+  }
+}

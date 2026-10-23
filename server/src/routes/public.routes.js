@@ -102,6 +102,15 @@ const courseSelect = {
 
 const courseDetailSelect = {
   ...courseSelect,
+  prerequisites: true,
+  targetAudience: true,
+  learningOutcomes: true,
+  courseBenefits: true,
+  solyceAdvantages: true,
+  certifications: true,
+  practicalProjects: true,
+  careerOutcomes: true,
+
   modules: {
     where: { isPublished: true },
     orderBy: { position: "asc" },

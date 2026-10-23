@@ -318,6 +318,15 @@ function CourseDetail({ course, onBack }) {
     .map((item) => item.trim())
     .filter(Boolean);
 
+  const modules = course.modules || [];
+
+  function splitContent(value) {
+    return (value || "")
+      .split("\n")
+      .map((item) => item.trim())
+      .filter(Boolean);
+  }
+
   const [bookingCohort, setBookingCohort] = useState(null);
   const bookingSectionRef = useRef(null);
 
@@ -418,7 +427,7 @@ function CourseDetail({ course, onBack }) {
           </div>
         </section>
 
-        {/* 02 — Le parcours d'apprentissage */}
+        {/* 02 — Curriculum détaillé */}
         <section
           className="curriculum-section detail-curriculum"
           aria-labelledby="curriculum-title"
@@ -429,26 +438,93 @@ function CourseDetail({ course, onBack }) {
                 <span className="eyebrow-line" />
                 Your learning journey
               </div>
-
-              <h2 id="curriculum-title">Every step has a purpose.</h2>
+              <h2 id="curriculum-title">
+                A clear path from learning to practice.
+              </h2>
             </div>
-
             <p>
-              Explore the learning topics included in this program and
-              understand what your journey will cover.
+              Explore the modules, lessons and learning objectives that
+              structure your progress throughout this program.
             </p>
           </div>
 
-          {curriculum.length > 0 ? (
+          {modules.length > 0 ? (
+            <div className="detail-module-list">
+              {modules.map((module, index) => (
+                <details
+                  className="detail-module"
+                  key={module.id}
+                  open={index === 0}
+                >
+                  <summary className="detail-module-summary">
+                    <span className="curriculum-number">
+                      {String(index + 1).padStart(2, "0")}
+                    </span>
+
+                    <span className="detail-module-heading">
+                      <strong>{module.title}</strong>
+                      <span>
+                        {module.lessons?.length || 0} lesson
+                        {module.lessons?.length === 1 ? "" : "s"}
+                      </span>
+                    </span>
+
+                    <span className="detail-module-toggle" aria-hidden="true">
+                      +
+                    </span>
+                  </summary>
+
+                  {module.description && (
+                    <p className="detail-module-description">
+                      {module.description}
+                    </p>
+                  )}
+
+                  {module.lessons?.length > 0 ? (
+                    <ol className="detail-lesson-list">
+                      {module.lessons.map((lesson, lessonIndex) => (
+                        <li className="detail-lesson" key={lesson.id}>
+                          <span className="detail-lesson-index">
+                            {String(lessonIndex + 1).padStart(2, "0")}
+                          </span>
+
+                          <div className="detail-lesson-content">
+                            <h3>{lesson.title}</h3>
+
+                            {lesson.description && <p>{lesson.description}</p>}
+
+                            {lesson.objectives && (
+                              <div className="detail-lesson-objectives">
+                                <strong>Learning objectives</strong>
+                                <p>{lesson.objectives}</p>
+                              </div>
+                            )}
+                          </div>
+
+                          {lesson.estimatedMinutes != null && (
+                            <span className="detail-lesson-duration">
+                              {lesson.estimatedMinutes} min
+                            </span>
+                          )}
+                        </li>
+                      ))}
+                    </ol>
+                  ) : (
+                    <p className="empty-inline">
+                      Lessons for this module will be published soon.
+                    </p>
+                  )}
+                </details>
+              ))}
+            </div>
+          ) : curriculum.length > 0 ? (
             <ol className="curriculum-list">
               {curriculum.map((item, index) => (
                 <li key={`${index}-${item}`}>
                   <span className="curriculum-number">
                     {String(index + 1).padStart(2, "0")}
                   </span>
-
                   <span className="curriculum-item-text">{item}</span>
-
                   <span className="curriculum-arrow" aria-hidden="true">
                     ↗
                   </span>
@@ -457,10 +533,125 @@ function CourseDetail({ course, onBack }) {
             </ol>
           ) : (
             <div className="empty-inline">
-              Detailed curriculum information will be available soon.
+              The detailed curriculum will be available soon.
             </div>
           )}
         </section>
+
+        {/* 02B — Ce que le programme apporte */}
+        {[
+          {
+            id: "audience",
+            number: "01",
+            eyebrow: "IS THIS PROGRAM FOR YOU?",
+            title: "Who this program is for",
+            description:
+              "Understand whether this learning path matches your goals and current level.",
+            items: splitContent(course.targetAudience),
+          },
+          {
+            id: "prerequisites",
+            number: "02",
+            eyebrow: "BEFORE YOU BEGIN",
+            title: "What you need to get started",
+            description:
+              "Review the recommended background and requirements before enrolling.",
+            items: splitContent(course.prerequisites),
+          },
+          {
+            id: "outcomes",
+            number: "03",
+            eyebrow: "YOUR PROGRESS",
+            title: "What you will learn",
+            description:
+              "Explore the knowledge and skills this program is designed to develop.",
+            items: splitContent(course.learningOutcomes),
+          },
+          {
+            id: "benefits",
+            number: "04",
+            eyebrow: "THE VALUE OF LEARNING",
+            title: "What makes this program valuable",
+            description:
+              "Discover how the program supports your learning objectives.",
+            items: splitContent(course.courseBenefits),
+          },
+          {
+            id: "solyce",
+            number: "05",
+            eyebrow: "THE SOLYCE DIFFERENCE",
+            title: "Why learn with Solyce?",
+            description:
+              "See how our learning experience supports your progress.",
+            items: splitContent(course.solyceAdvantages),
+          },
+          {
+            id: "projects",
+            number: "06",
+            eyebrow: "LEARNING BY DOING",
+            title: "Put your knowledge into practice",
+            description:
+              "Explore the practical exercises and projects included in the program.",
+            items: splitContent(course.practicalProjects),
+          },
+          {
+            id: "certifications",
+            number: "07",
+            eyebrow: "RECOGNITION & EXAMS",
+            title: "Certifications and exam pathways",
+            description:
+              "Review the certifications or examinations explicitly associated with this program.",
+            items: splitContent(course.certifications),
+          },
+          {
+            id: "careers",
+            number: "08",
+            eyebrow: "LOOKING AHEAD",
+            title: "Where this learning can take you",
+            description:
+              "Explore the opportunities and next steps relevant to your learning goals.",
+            items: splitContent(course.careerOutcomes),
+          },
+        ]
+          .filter((section) => section.items.length > 0)
+          .map((section) => (
+            <section
+              className="detail-marketing-section"
+              key={section.id}
+              aria-labelledby={`detail-${section.id}-title`}
+            >
+              <div className="detail-marketing-index">
+                <span>{section.number}</span>
+                <span className="detail-marketing-index-line" />
+              </div>
+
+              <div className="detail-marketing-content">
+                <div className="eyebrow">
+                  <span className="eyebrow-line" />
+                  {section.eyebrow}
+                </div>
+
+                <h2 id={`detail-${section.id}-title`}>{section.title}</h2>
+                <p className="detail-marketing-description">
+                  {section.description}
+                </p>
+
+                <ul className="detail-marketing-list">
+                  {section.items.map((item, index) => (
+                    <li key={`${section.id}-${index}`}>
+                      <span
+                        className="detail-marketing-check"
+                        aria-hidden="true"
+                      >
+                        ↗
+                      </span>
+                      <span>{item}</span>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            </section>
+          ))}
 
         {/* 03 — L'expérience d'apprentissage */}
         <section
@@ -675,6 +866,140 @@ function CourseDetail({ course, onBack }) {
             />
           </section>
         )}
+
+        {/* 06 — Questions fréquentes */}
+        <section className="detail-faq" aria-labelledby="detail-faq-title">
+          <div className="detail-faq-intro">
+            <div className="eyebrow">
+              <span className="eyebrow-line" />
+              BEFORE YOU ENROL
+            </div>
+
+            <h2 id="detail-faq-title">A few things worth knowing.</h2>
+
+            <p>
+              Here are the answers to common questions about learning with
+              Solyce and reserving your place.
+            </p>
+          </div>
+
+          <div className="detail-faq-list">
+            <details className="detail-faq-item">
+              <summary>
+                <span>How are classes delivered?</span>
+                <span className="detail-faq-toggle" aria-hidden="true">
+                  +
+                </span>
+              </summary>
+              <p>
+                Classes are delivered live with an instructor. Your cohort
+                information provides the schedule and details for your session.
+              </p>
+            </details>
+
+            <details className="detail-faq-item">
+              <summary>
+                <span>How many learners are in a class?</span>
+                <span className="detail-faq-toggle" aria-hidden="true">
+                  +
+                </span>
+              </summary>
+              <p>
+                Solyce cohorts are designed for a maximum of eight students,
+                allowing learners to participate and practise in a small group.
+              </p>
+            </details>
+
+            <details className="detail-faq-item">
+              <summary>
+                <span>How do I reserve my place?</span>
+                <span className="detail-faq-toggle" aria-hidden="true">
+                  +
+                </span>
+              </summary>
+              <p>
+                Select an available session, choose “Reserve your place” and
+                submit your contact details. You do not need a student account
+                to submit a booking request.
+              </p>
+            </details>
+
+            <details className="detail-faq-item">
+              <summary>
+                <span>When is my enrolment confirmed?</span>
+                <span className="detail-faq-toggle" aria-hidden="true">
+                  +
+                </span>
+              </summary>
+              <p>
+                Submitting a booking is only a request, not a confirmed
+                enrolment. The Solyce team will provide payment instructions,
+                and your place is confirmed after the required payment has been
+                verified.
+              </p>
+            </details>
+
+            <details className="detail-faq-item">
+              <summary>
+                <span>How much does the program cost?</span>
+                <span className="detail-faq-toggle" aria-hidden="true">
+                  +
+                </span>
+              </summary>
+              <p>
+                The program tuition is displayed above. If a session has its own
+                price, the amount shown for that session applies. Review the
+                available sessions before submitting your booking.
+              </p>
+            </details>
+
+            <details className="detail-faq-item">
+              <summary>
+                <span>What if no session is available?</span>
+                <span className="detail-faq-toggle" aria-hidden="true">
+                  +
+                </span>
+              </summary>
+              <p>
+                If there are no upcoming sessions listed, contact the Solyce
+                team to express your interest and ask about future enrolment.
+              </p>
+            </details>
+          </div>
+        </section>
+
+        {/* 07 — Appel à l'action final */}
+        <section className="detail-final-cta">
+          <span className="detail-final-cta-mark" aria-hidden="true">
+            S.
+          </span>
+
+          <div className="eyebrow">
+            <span className="eyebrow-line" />
+            YOUR NEXT CHAPTER STARTS HERE
+          </div>
+
+          <h2>Ready to take your next step?</h2>
+
+          <p>
+            Explore the upcoming sessions and choose the learning path that best
+            fits your goals.
+          </p>
+
+          <div className="detail-final-cta-actions">
+            <a className="button button-primary" href="#course-schedule">
+              Explore available sessions <ArrowIcon />
+            </a>
+
+            <button
+              className="button button-outline"
+              type="button"
+              onClick={onBack}
+            >
+              Explore other programs
+            </button>
+          </div>
+        </section>
       </div>
     </main>
   );
